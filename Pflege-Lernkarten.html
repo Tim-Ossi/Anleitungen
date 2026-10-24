@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pflege-Lernkarten</title>
+<style>
+:root{
+  --bg:#f5f3ee; --panel:#ffffff; --panel2:#faf8f4; --ink:#1f2a2e; --muted:#5d6b70; --line:#e2ddd3;
+  --accent:#1f6f6b; --accent-ink:#ffffff; --accent-soft:#e3f0ee;
+  --y1:#2f7d4f; --y1s:#e5f3ea; --y2:#b5651d; --y2s:#f8ecdf; --y3:#6a3fa0; --y3s:#efe8f7;
+  --warn:#9a3412; --warns:#fdeee4; --ok:#166534; --oks:#e3f4e8; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+  --radius:12px; --font:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141a1c; --panel:#1c2427; --panel2:#212b2e; --ink:#e7ecec; --muted:#9db0b2; --line:#2f3b3f;
+  --accent:#5fb8b0; --accent-ink:#0f1719; --accent-soft:#1f3634;
+  --y1:#6fcf97; --y1s:#1d3326; --y2:#f0a35e; --y2s:#3a2a1b; --y3:#b794e6; --y3s:#2c2240;
+  --warn:#fdba74; --warns:#3b2414; --ok:#86efac; --oks:#183222; --shadow:0 1px 2px rgba(0,0,0,.3);
+}}
+:root[data-theme="dark"]{
+  --bg:#141a1c; --panel:#1c2427; --panel2:#212b2e; --ink:#e7ecec; --muted:#9db0b2; --line:#2f3b3f;
+  --accent:#5fb8b0; --accent-ink:#0f1719; --accent-soft:#1f3634;
+  --y1:#6fcf97; --y1s:#1d3326; --y2:#f0a35e; --y2s:#3a2a1b; --y3:#b794e6; --y3s:#2c2240;
+  --warn:#fdba74; --warns:#3b2414; --ok:#86efac; --oks:#183222; --shadow:0 1px 2px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.btn{border:1px solid var(--line);background:var(--panel);padding:.45rem .8rem;border-radius:8px}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--warn)}
+.btn.small{padding:.25rem .55rem;font-size:.85rem}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:.6rem 1rem;display:flex;gap:.75rem;align-items:center;flex-wrap:wrap}
+header h1{font-size:1.1rem;margin:0;margin-right:auto;display:flex;align-items:center;gap:.5rem}
+header h1 .logo{width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:700}
+.learner{display:flex;gap:.35rem;align-items:center}
+.learner select{padding:.4rem;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
+.layout{display:grid;grid-template-columns:290px 1fr;min-height:calc(100vh - 56px)}
+aside{border-right:1px solid var(--line);background:var(--panel2);padding:1rem;position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto}
+aside h2{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:1rem 0 .4rem}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:.45rem .2rem;font-size:.85rem;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.search{width:100%;padding:.5rem .7rem;border-radius:8px;border:1px solid var(--line);background:var(--panel)}
+.topics{list-style:none;margin:0;padding:0}
+.topics li button{width:100%;text-align:left;border:0;background:none;padding:.38rem .5rem;border-radius:7px;display:flex;justify-content:space-between;gap:.5rem;font-size:.9rem}
+.topics li button:hover{background:var(--accent-soft)}
+.topics li button.on{background:var(--accent);color:var(--accent-ink)}
+.topics .cnt{font-size:.75rem;opacity:.75;flex:none}
+.topics .letter{font-size:.7rem;font-weight:700;color:var(--muted);padding:.5rem .5rem .1rem}
+main{padding:1.2rem;min-width:0}
+.toolbar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-bottom:1rem}
+.toolbar .title{font-size:1.15rem;font-weight:650;margin-right:auto}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:1rem}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:1rem;box-shadow:var(--shadow);cursor:pointer;display:flex;flex-direction:column;gap:.45rem;transition:transform .08s}
+.card:hover{transform:translateY(-2px);border-color:var(--accent)}
+.card h3{margin:0;font-size:1rem;line-height:1.3}
+.card .meta{font-size:.82rem;color:var(--muted)}
+.badges{display:flex;gap:.35rem;flex-wrap:wrap}
+.badge{font-size:.72rem;padding:.12rem .5rem;border-radius:99px;border:1px solid var(--line);white-space:nowrap}
+.b-y1{background:var(--y1s);color:var(--y1);border-color:transparent;font-weight:600}
+.b-y2{background:var(--y2s);color:var(--y2);border-color:transparent;font-weight:600}
+.b-y3{background:var(--y3s);color:var(--y3);border-color:transparent;font-weight:600}
+.b-done{background:var(--oks);color:var(--ok);border-color:transparent}
+.b-prog{background:var(--warns);color:var(--warn);border-color:transparent}
+.b-own{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.empty{padding:2rem;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius)}
+.overlay{position:fixed;inset:0;background:rgba(10,15,17,.45);z-index:20;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:2rem 1rem}
+.overlay.open{display:flex}
+.sheet{background:var(--panel);border-radius:16px;max-width:900px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.25);border:1px solid var(--line)}
+.sheet-head{padding:1.1rem 1.3rem;border-bottom:1px solid var(--line);display:flex;gap:1rem;align-items:flex-start}
+.sheet-head h2{margin:.2rem 0 0;font-size:1.25rem;line-height:1.3}
+.sheet-head .x{margin-left:auto;flex:none}
+.sheet-body{padding:1.1rem 1.3rem}
+.sheet-foot{padding:.9rem 1.3rem;border-top:1px solid var(--line);display:flex;gap:.5rem;flex-wrap:wrap;justify-content:flex-end}
+.sec{margin:0 0 1.2rem}
+.sec h3{font-size:.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 .45rem}
+.case{background:var(--panel2);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:.85rem 1rem}
+.case .pat{font-weight:650;margin-bottom:.25rem}
+.task{border:1px solid var(--line);border-radius:10px;padding:.75rem .9rem;margin-bottom:.6rem;background:var(--panel)}
+.task .q{font-weight:600;margin-bottom:.4rem}
+.task textarea,.fld textarea{width:100%;min-height:80px;border:1px solid var(--line);border-radius:8px;padding:.55rem;background:var(--panel2);resize:vertical}
+ul.clean{margin:.2rem 0;padding-left:1.2rem}
+ul.clean li{margin:.15rem 0}
+.hidden-box{border:1px dashed var(--line);border-radius:10px;padding:.9rem;text-align:center;color:var(--muted)}
+.horizon{background:var(--oks);border-radius:10px;padding:.8rem 1rem;border:1px solid transparent}
+.src{font-size:.88rem}
+.row{display:flex;gap:1rem;flex-wrap:wrap}
+.row>*{flex:1 1 220px}
+.fld{margin-bottom:.85rem}
+.fld label{display:block;font-size:.82rem;font-weight:600;margin-bottom:.25rem}
+.fld input,.fld select{width:100%;padding:.5rem .6rem;border:1px solid var(--line);border-radius:8px;background:var(--panel2)}
+.fld .hint{font-size:.78rem;color:var(--muted);margin-top:.2rem}
+.notice{background:var(--warns);color:var(--ink);border-radius:10px;padding:.7rem .9rem;font-size:.88rem;border-left:4px solid var(--warn)}
+.rating{display:flex;gap:.4rem;flex-wrap:wrap}
+.rating button{border:1px solid var(--line);background:var(--panel);border-radius:99px;padding:.3rem .75rem;font-size:.85rem}
+.rating button.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.progressbar{height:8px;background:var(--line);border-radius:99px;overflow:hidden;min-width:120px}
+.progressbar>div{height:100%;background:var(--accent)}
+.stat{font-size:.85rem;color:var(--muted);display:flex;gap:.6rem;align-items:center}
+.toast{position:fixed;bottom:1rem;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:.55rem 1rem;border-radius:99px;font-size:.9rem;z-index:50;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+table.info{border-collapse:collapse;width:100%;font-size:.88rem}
+table.info td,table.info th{border-bottom:1px solid var(--line);padding:.35rem .4rem;text-align:left;vertical-align:top}
+.menu-toggle{display:none}
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr}
+  aside{position:fixed;left:0;top:0;height:100vh;width:86%;max-width:320px;z-index:15;transform:translateX(-105%);transition:transform .2s;box-shadow:0 0 30px rgba(0,0,0,.3)}
+  aside.open{transform:none}
+  .menu-toggle{display:inline-block}
+  main{padding:1rem}
+  header{padding:.6rem 1rem;position:static}
+  header h1 .sub{display:none}
+}
+@media print{
+  header,aside,main,.sheet-foot,.no-print,.sheet-head .x{display:none!important}
+  body{background:#fff;color:#000}
+  .overlay{position:static;display:block!important;background:none;padding:0}
+  .sheet{box-shadow:none;border:0;max-width:none}
+  .overlay:not(.print-target){display:none!important}
+  .task textarea{border:0;min-height:0;background:none;padding:0}
+  .print-answer{display:block!important;white-space:pre-wrap;border-left:2px solid #999;padding-left:.5rem;min-height:2.5em}
+}
+.print-answer{display:none}
+</style>
+</head>
+<body>
+<header>
+  <button class="btn menu-toggle" id="menuBtn" aria-label="Themen anzeigen">☰</button>
+  <h1><span class="logo">+</span> Pflege-Lernkarten <span class="sub" style="font-weight:400;color:var(--muted);font-size:.85rem">Praxisanleitung · generalistische Ausbildung</span></h1>
+  <div class="learner">
+    <label for="learnerSel" style="font-size:.85rem;color:var(--muted)">Lernende/r:</label>
+    <select id="learnerSel"></select>
+    <button class="btn small" id="learnerAdd" title="Lernende/n anlegen">+ </button>
+  </div>
+  <button class="btn primary" id="newCardBtn">+ Neue Lernkarte</button>
+  <button class="btn" id="topicsBtn">Themen</button>
+  <button class="btn" id="dataBtn">Daten</button>
+  <button class="btn" id="infoBtn">Grundlagen</button>
+</header>
+
+<div class="layout">
+  <aside id="aside">
+    <h2>Lehrjahr</h2>
+    <div class="seg" id="yearSeg">
+      <button data-y="0" class="on">Alle</button><button data-y="1">1.</button><button data-y="2">2.</button><button data-y="3">3.</button>
+    </div>
+    <h2>Suche</h2>
+    <input class="search" id="search" type="search" placeholder="Titel, Fall, Quelle …">
+    <h2>Themengebiete A–Z</h2>
+    <ul class="topics" id="topicList"></ul>
+  </aside>
+  <main>
+    <div class="toolbar">
+      <div class="title" id="viewTitle">Alle Lernkarten</div>
+      <div class="stat" id="stat"></div>
+      <select id="statusFilter" class="btn" title="Status filtern">
+        <option value="">Alle Status</option><option value="offen">Offen</option><option value="bearbeitung">In Bearbeitung</option><option value="erledigt">Erledigt</option>
+      </select>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<!-- Karten-Detail / Lernmodus -->
+<div class="overlay" id="detailOv"><div class="sheet" id="detailSheet"></div></div>
+<!-- Editor -->
+<div class="overlay" id="editOv"><div class="sheet" id="editSheet"></div></div>
+<!-- Diverse Dialoge -->
+<div class="overlay" id="dlgOv"><div class="sheet" id="dlgSheet"></div></div>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+/* =========================================================
+   Stammdaten: Themengebiete (zugeordnet zu den curricularen
+   Einheiten der Rahmenpläne der Fachkommission nach § 53 PflBG)
+   ========================================================= */
+const DEFAULT_TOPICS = [
+  {id:"akut", name:"Akut- und Notfallsituationen", ce:"CE 06"},
+  {id:"arznei", name:"Arzneimittelmanagement", ce:"CE 05"},
+  {id:"atmung", name:"Atmung und Atemunterstützung", ce:"CE 05"},
+  {id:"ausbildung", name:"Ausbildungsstart und Berufsrolle", ce:"CE 01"},
+  {id:"ausscheidung", name:"Ausscheidung und Kontinenzförderung", ce:"CE 02, CE 05"},
+  {id:"beratung", name:"Beratung, Schulung und Anleitung", ce:"CE 04, CE 07"},
+  {id:"bewegung", name:"Bewegung und Mobilität", ce:"CE 02"},
+  {id:"chronisch", name:"Chronische Erkrankungen (z. B. Diabetes mellitus)", ce:"CE 05"},
+  {id:"dekubitus", name:"Dekubitusprophylaxe", ce:"CE 02"},
+  {id:"demenz", name:"Demenz und kognitive Beeinträchtigungen", ce:"CE 11"},
+  {id:"entlassung", name:"Entlassungs- und Überleitungsmanagement", ce:"CE 07"},
+  {id:"ernaehrung", name:"Ernährung und Flüssigkeitshaushalt", ce:"CE 02, CE 05"},
+  {id:"ethik", name:"Ethik, Recht und freiheitsentziehende Maßnahmen", ce:"CE 08, CE 11"},
+  {id:"gesundheit", name:"Gesundheitsförderung und Prävention", ce:"CE 04"},
+  {id:"hygiene", name:"Hygiene und Infektionsprävention", ce:"CE 05"},
+  {id:"kinder", name:"Kinder und Jugendliche", ce:"CE 10"},
+  {id:"kommunikation", name:"Kommunikation und Beziehungsgestaltung", ce:"CE 03"},
+  {id:"koerperpflege", name:"Körperpflege und Mundgesundheit", ce:"CE 02"},
+  {id:"lebenswelt", name:"Lebensgestaltung und Lebensweltorientierung", ce:"CE 09"},
+  {id:"palliativ", name:"Palliative Pflege und Sterbebegleitung", ce:"CE 08"},
+  {id:"periop", name:"Perioperative Pflege", ce:"CE 05"},
+  {id:"prozess", name:"Pflegeprozess, Dokumentation und Steuerung", ce:"CE 01, CE 05"},
+  {id:"psych", name:"Psychische Gesundheit und psychiatrische Pflege", ce:"CE 11"},
+  {id:"reha", name:"Rehabilitation und interprofessionelles Team", ce:"CE 07"},
+  {id:"schmerz", name:"Schmerzmanagement", ce:"CE 05"},
+  {id:"sturz", name:"Sturzprophylaxe", ce:"CE 02"},
+  {id:"vital", name:"Vitalzeichen und Krankenbeobachtung", ce:"CE 05, CE 06"},
+  {id:"wunde", name:"Wundmanagement", ce:"CE 05"}
+];
+
+const RP = "Rahmenpläne der Fachkommission nach § 53 PflBG (BIBB, 2. überarb. Aufl. 2020)";
+
+/* =========================================================
+   Fallbeispiele (fiktiv, anonymisiert – Initial + Alter)
+   y = Lehrjahr, t = Themen-ID, kb = Kompetenzbereiche Anlage 2 PflAPrV
+   ========================================================= */
+const DEFAULT_CARDS = [
+/* ---------------- 1. LEHRJAHR ---------------- */
+{id:"c01",y:1,t:"ausbildung",title:"Schweigepflicht im Stationsalltag",setting:"Stationäre Akutpflege (Innere Medizin)",dur:"30 Min.",kb:["II","IV"],
+pat:"Herr T., 67 Jahre, und seine Zimmernachbarin Frau N., 71 Jahre",
+sit:"Du bist in deiner zweiten Woche auf einer internistischen Station. Beim Bettenmachen fragt dich Herr T., ob Frau N. „etwas Schlimmes“ habe – sie sei heute so lange untersucht worden. Kurz danach ruft eine Person an, stellt sich als Nichte von Frau N. vor und möchte wissen, wie die Untersuchung ausgegangen ist.",
+tasks:["Wie antwortest du Herrn T.? Formuliere eine konkrete, freundliche Antwort.","Wie gehst du mit dem Telefonanruf um? Beschreibe dein Vorgehen Schritt für Schritt.","Welche rechtlichen Grundlagen der Schweigepflicht und des Datenschutzes gelten auch für dich als Auszubildende/r?","Welche Situationen im Stationsalltag gefährden die Vertraulichkeit? Nenne mindestens vier."],
+goals:["Grundlagen von Schweigepflicht und Datenschutz kennen und anwenden","Grenzen wertschätzend kommunizieren"],
+hor:["Keine Auskunft über Mitpatient*innen; Anliegen anerkennen und Grenze freundlich benennen (z. B. „Ich verstehe, dass Sie sich Gedanken machen. Über andere Patientinnen darf ich keine Auskunft geben.“).","Telefonisch keine Auskünfte, da Identität und Berechtigung nicht überprüfbar sind; Anruf an die verantwortliche Pflegefachperson bzw. Ärztin/Arzt weitergeben; Regelungen der Einrichtung beachten (z. B. Schweigepflichtentbindung, von der Patientin benannte Auskunftspersonen).","§ 203 StGB erfasst Angehörige von Heilberufen und auch Personen, die bei ihnen zur Vorbereitung auf den Beruf tätig sind; Gesundheitsdaten sind besondere Kategorien personenbezogener Daten (Art. 9 DSGVO); zusätzlich arbeitsvertragliche Verschwiegenheit und berufsethische Verpflichtung (ICN-Ethikkodex).","Risiken: Übergaben im Mehrbettzimmer oder Flur, offen liegende Dokumentation, nicht gesperrte Bildschirme, Gespräche in Aufzug/Pausenraum/Bus, Fotos oder Beiträge in sozialen Medien."],
+refl:["Wie hast du dich gefühlt, als du eine Frage ablehnen musstest?","Was nimmst du dir für deine nächste Übergabe vor?"],
+src:["§ 203 StGB – Verletzung von Privatgeheimnissen","Art. 9 DSGVO – Verarbeitung besonderer Kategorien personenbezogener Daten","ICN-Ethikkodex für Pflegefachpersonen (International Council of Nurses)",RP+", CE 01"]},
+
+{id:"c02",y:1,t:"bewegung",title:"Transfer vom Bett in den Rollstuhl",setting:"Stationäre Langzeitpflege",dur:"45 Min.",kb:["I","V"],
+pat:"Frau B., 84 Jahre",
+sit:"Frau B. lebt seit einem Jahr in der Einrichtung. Sie hat eine beidseitige Kniegelenksarthrose und ist nach einem Infekt deutlich geschwächt. Sie kann mit Unterstützung an der Bettkante sitzen und einige Sekunden stehen. Sie möchte zum Mittagessen in den Gemeinschaftsraum.",
+tasks:["Schätze die Mobilität von Frau B. ein: Welche Ressourcen und Einschränkungen erkennst du?","Plane den Transfer so, dass Frau B. möglichst viel selbst übernimmt (Vorbereitung, Position des Rollstuhls, Anleitung).","Führe den Transfer unter Anleitung durch. Worauf achtest du bei deiner eigenen Körperhaltung?","Welche Maßnahmen erhalten und fördern die Mobilität von Frau B. im Alltag?"],
+goals:["Mobilität ressourcenorientiert einschätzen","Transfer sicher, aktivierend und rückengerecht durchführen"],
+hor:["Einschätzung: Sitzbalance, Kraft in den Beinen, Schmerzen, Kreislauf (orthostatische Reaktion), Kognition und Motivation, Hilfsmittel (Schuhe, Brille, Gehhilfe).","Vorbereitung: Bett auf geeignete Höhe, Bremsen feststellen, Rollstuhl nah und im passenden Winkel, Fußstützen weg, feste Schuhe; Kreislauf an der Bettkante beobachten.","Bewegung in kleinen Schritten, Gewicht über die Füße verlagern, eigene Bewegungsmuster von Frau B. nutzen, verbal und taktil anleiten – unterstützen statt heben.","Mobilitätsförderung in den Alltag integrieren (Gehstrecken, Sitzen am Tisch, Bewegungsangebote), Ziele mit Frau B. vereinbaren, Zusammenarbeit mit der Physiotherapie."],
+refl:["Wie viel hat Frau B. selbst gemacht – und wo hast du zu schnell übernommen?","Wie ging es deinem Rücken?"],
+src:["DNQP: Expertenstandard „Erhaltung und Förderung der Mobilität in der Pflege“ (nach § 113a SGB XI)","BGW (Berufsgenossenschaft für Gesundheitsdienst und Wohlfahrtspflege): Präventionsangebote zu rückengerechtem Arbeiten",RP+", CE 02"]},
+
+{id:"c03",y:1,t:"dekubitus",title:"Hautinspektion und individueller Bewegungsplan",setting:"Stationäre Langzeitpflege",dur:"45 Min.",kb:["I","V"],
+pat:"Herr S., 88 Jahre",
+sit:"Herr S. ist seit einem Sturz vor zwei Wochen überwiegend bettlägerig. Er verändert seine Position kaum selbst, ist harninkontinent und isst nur etwa die Hälfte seiner Mahlzeiten. Bei der Morgenpflege fällt dir eine Rötung über dem Kreuzbein auf.",
+tasks:["Welche Risikofaktoren für einen Dekubitus erkennst du bei Herrn S.?","Wie prüfst du, ob die Rötung bereits einem Dekubitus der Kategorie 1 entspricht?","Erstelle mit deiner Praxisanleitung einen individuellen Bewegungs- und Positionierungsplan.","Welche weiteren Maßnahmen (Haut, Ernährung, Inkontinenz) sind sinnvoll? Wen informierst du?"],
+goals:["Dekubitusrisiko fachlich begründet einschätzen","Prophylaxe individuell planen und dokumentieren"],
+hor:["Risikofaktoren: stark eingeschränkte Mobilität/Aktivität (zentral), Feuchtigkeit durch Inkontinenz, unzureichende Ernährung, hohes Alter. Die Einschätzung erfolgt systematisch durch die Pflegefachperson; Skalen können die fachliche Einschätzung ergänzen.","Fingertest bzw. Glasspateltest: Eine Rötung, die bei Druck nicht abblasst, entspricht Kategorie 1. Haut bei jeder Positionierung und Pflege inspizieren.","Plan: Bewegung fördern, regelmäßige Positionswechsel mit individuellen Intervallen (nach Hautreaktion), z. B. 30°-Seitenlage, Fersen frei lagern, Mikrobewegungen, druckverteilende Hilfsmittel nach Bedarf; Reibung und Scherkräfte vermeiden. Gerötete Stellen nicht massieren.","Hautpflege mit hautneutralen Produkten, Hautschutz und angepasste Inkontinenzversorgung, Ernährungsscreening; Pflegefachperson und Ärztin/Arzt informieren, Befund und Plan dokumentieren."],
+refl:["Woran hast du die Rötung bemerkt – und wie sicher warst du in der Einschätzung?"],
+src:["DNQP: Expertenstandard „Dekubitusprophylaxe in der Pflege“ (2. Aktualisierung 2017)","EPUAP/NPIAP/PPPIA: Prevention and Treatment of Pressure Ulcers/Injuries – Clinical Practice Guideline (2019)",RP+", CE 02"]},
+
+{id:"c04",y:1,t:"ernaehrung",title:"Geringe Trinkmenge an einem heißen Tag",setting:"Stationäre Langzeitpflege",dur:"30 Min.",kb:["I"],
+pat:"Frau W., 91 Jahre",
+sit:"Es ist Hochsommer. Frau W. sagt, sie habe „keinen Durst“. Ihre Tasse steht seit dem Frühstück fast voll auf dem Nachttisch. Seit gestern wirkt sie zeitweise verwirrt, die Mundschleimhaut ist trocken.",
+tasks:["Welche Zeichen eines Flüssigkeitsmangels erkennst du – und welche weiteren beobachtest du?","Warum trinken ältere Menschen häufig zu wenig? Nenne mögliche Ursachen bei Frau W.","Plane individuelle Maßnahmen zur Trinkförderung.","Wann und wen informierst du? Was dokumentierst du?"],
+goals:["Flüssigkeitsdefizit erkennen","Trinkförderung individuell gestalten"],
+hor:["Zeichen: trockene Schleimhäute, konzentrierter/wenig Urin, neu aufgetretene Verwirrtheit, Schwindel, Obstipation, Tachykardie oder niedriger Blutdruck. Der Hautturgor ist im Alter wenig aussagekräftig.","Ursachen: vermindertes Durstempfinden, Angst vor Inkontinenz oder nächtlichen Toilettengängen, Schluck- oder Greifprobleme, kognitive Einschränkungen, Medikamente (z. B. Diuretika).","Maßnahmen: Vorlieben erfragen, Getränke sichtbar und erreichbar, geeignete Trinkgefäße, regelmäßig anbieten und gemeinsam trinken, wasserreiche Lebensmittel, Trinkprotokoll. Ärztliche Trinkmengenvorgaben (z. B. bei Herzinsuffizienz) beachten.","Neu aufgetretene Verwirrtheit umgehend der Pflegefachperson bzw. Ärztin/Arzt melden; Ein- und Ausfuhr sowie Beobachtungen dokumentieren."],
+refl:["Was hat Frau W. selbst über ihr Trinken erzählt?"],
+src:["DNQP: Expertenstandard „Ernährungsmanagement zur Sicherung und Förderung der oralen Ernährung in der Pflege“ (1. Aktualisierung 2017)","Deutsche Gesellschaft für Ernährung (DGE): Referenzwerte für die Nährstoffzufuhr – Wasser",RP+", CE 02"]},
+
+{id:"c05",y:1,t:"hygiene",title:"Händehygiene in der direkten Versorgung",setting:"Stationäre Akutpflege (Chirurgie)",dur:"30 Min.",kb:["I","IV"],
+pat:"Herr A., 72 Jahre",
+sit:"Herr A. ist am zweiten Tag nach einer Bauchoperation. Er hat einen peripheren Venenkatheter und einen Wundverband. Du unterstützt ihn bei der Morgenpflege, kontrollierst danach die Einstichstelle des Venenkatheters und räumst anschließend den Nachttisch auf.",
+tasks:["Nenne die fünf Indikationen der Händedesinfektion und ordne sie dem Ablauf zu.","Beschreibe die korrekte Durchführung der hygienischen Händedesinfektion.","Wann sind Einmalhandschuhe nötig – und ersetzen sie die Händedesinfektion?","Welche Voraussetzungen an Händen und Unterarmen gelten (Schmuck, Nägel, Hautschutz)?"],
+goals:["Indikationen der Händehygiene sicher anwenden","Eigenschutz und Patientenschutz verbinden"],
+hor:["Fünf Indikationen (WHO): vor Patientenkontakt, vor aseptischen Tätigkeiten (z. B. Manipulation am Venenkatheter), nach Kontakt mit potenziell infektiösem Material, nach Patientenkontakt, nach Kontakt mit der unmittelbaren Patientenumgebung (Nachttisch).","Ausreichend Präparat in die trockenen Hände, alle Hautareale benetzen (besonders Fingerspitzen und Daumen), Einwirkzeit nach Herstellerangabe einhalten.","Handschuhe bei erwartetem Kontakt mit Blut, Sekreten, Ausscheidungen; sie ersetzen die Händedesinfektion nicht – nach dem Ausziehen desinfizieren.","Keine Ringe, Uhren oder Armbänder, kurze Fingernägel, kein Nagellack und keine künstlichen Nägel; regelmäßiger Hautschutz und Hautpflege."],
+refl:["Bei welchem der fünf Momente hast du die Desinfektion am ehesten vergessen?"],
+src:["WHO: Guidelines on Hand Hygiene in Health Care (2009)","KRINKO-Empfehlung „Händehygiene in Einrichtungen des Gesundheitswesens“ (RKI, 2016)","TRBA 250 – Biologische Arbeitsstoffe im Gesundheitswesen und in der Wohlfahrtspflege","§ 23 Infektionsschutzgesetz (IfSG)"]},
+
+{id:"c06",y:1,t:"kommunikation",title:"Aufnahmegespräch mit einem schwerhörigen Patienten",setting:"Stationäre Akutpflege",dur:"45 Min.",kb:["II"],
+pat:"Herr P., 74 Jahre",
+sit:"Herr P. wird mit einer Lungenentzündung aufgenommen. Er ist schwerhörig, sein Hörgerät liegt zu Hause. Er wirkt ängstlich, antwortet sehr knapp und sagt plötzlich: „Ich komm hier doch eh nicht mehr raus.“",
+tasks:["Bereite das Gespräch vor: Umgebung, Zeitpunkt, Hilfsmittel.","Welche Kommunikationsregeln wendest du bei Schwerhörigkeit an?","Formuliere eine empathische Reaktion auf seine Aussage.","Analysiere die Aussage mit dem Kommunikationsquadrat nach Schulz von Thun."],
+goals:["Gespräche personen- und situationsorientiert gestalten","Gefühle wahrnehmen und ansprechen"],
+hor:["Ruhiger Raum, Störquellen ausschalten, Licht auf dem eigenen Gesicht, auf Augenhöhe; Angehörige bitten, das Hörgerät mitzubringen.","Blickkontakt, langsam und deutlich sprechen (nicht schreien), kurze Sätze, Wichtiges schriftlich ergänzen, Verständnis durch Rückfragen sichern.","Gefühl aufgreifen statt beschwichtigen, z. B. „Sie machen sich große Sorgen, wie es weitergeht. Mögen Sie mir erzählen, was Sie am meisten beunruhigt?“","Sachinhalt (Einschätzung der Prognose), Selbstoffenbarung (Angst), Beziehung (Vertrauen/Misstrauen), Appell (Beistand, Information)."],
+refl:["Was hast du über Herrn P. erfahren, das nicht im Aufnahmebogen steht?"],
+src:["Rogers, C. R.: Grundhaltungen der personzentrierten Gesprächsführung (Empathie, Akzeptanz, Kongruenz)","Schulz von Thun, F.: Miteinander reden (Kommunikationsquadrat)",RP+", CE 03"]},
+
+{id:"c07",y:1,t:"koerperpflege",title:"Ressourcenorientierte Körper- und Mundpflege",setting:"Stationäre Akutpflege (Neurologie)",dur:"60 Min.",kb:["I","II"],
+pat:"Frau E., 76 Jahre",
+sit:"Frau E. hatte vor drei Wochen einen Schlaganfall. Sie hat eine Halbseitenlähmung rechts, kann mit der linken Hand greifen und spricht verwaschen. Sie trägt eine Oberkieferprothese.",
+tasks:["Welche Ressourcen und Einschränkungen hat Frau E. bei der Körperpflege?","Plane die Körperpflege so, dass Frau E. möglichst viel selbst übernimmt.","Beschreibe die Mund- und Prothesenpflege. Worauf achtest du besonders?","Was beobachtest du an der Haut?"],
+goals:["Körperpflege aktivierend gestalten","Mundgesundheit fördern"],
+hor:["Ressourcen: Greiffunktion links, Motivation, Sitzfähigkeit; Einschränkungen: Parese rechts, ggf. Wahrnehmungsstörungen, Sprechstörung, Ermüdbarkeit.","Frau E. bestimmt den Ablauf mit, wäscht Gesicht und Oberkörper mit links; betroffene Seite bewusst einbeziehen (nach therapeutischem Konzept der Einrichtung, z. B. Bobath); Zeit lassen, Pausen.","Mund inspizieren, Prothese außerhalb des Mundes reinigen, Zähne/Schleimhaut reinigen; bei Schluckstörung aufrechte Position und Aspirationsgefahr beachten; Auffälligkeiten melden.","Hautbeobachtung: Rötungen, Feuchtigkeit in Hautfalten, Trockenheit, Verletzungen, Ödeme an der gelähmten Seite."],
+refl:["Wann hat Frau E. gezeigt, dass sie etwas selbst machen möchte?"],
+src:["DNQP: Expertenstandard „Förderung der Mundgesundheit in der Pflege“",RP+", CE 02"]},
+
+{id:"c08",y:1,t:"prozess",title:"Pflegeanamnese beim Erstbesuch mitgestalten",setting:"Ambulante Pflege",dur:"45 Min.",kb:["I","IV"],
+pat:"Frau H., 66 Jahre",
+sit:"Frau H. ist nach einem Krankenhausaufenthalt wieder zu Hause. Sie hat einen Diabetes mellitus Typ 2 und ist nach der Behandlung sehr geschwächt. Der ambulante Pflegedienst übernimmt ab heute; du begleitest die Pflegefachperson beim Erstbesuch.",
+tasks:["Beschreibe die Schritte des Pflegeprozesses.","Welche Informationen sammelt ihr beim Erstbesuch – und auf welchen Wegen?","Warum darfst du den Pflegebedarf nicht allein feststellen?","Formuliere aus einer Beobachtung ein Pflegeproblem mit Ressource und Ziel."],
+goals:["Pflegeprozess verstehen","Rolle als Auszubildende/r im Prozess einordnen"],
+hor:["Z. B. sechs Schritte nach Fiechter/Meier: Informationssammlung, Probleme und Ressourcen erkennen, Ziele festlegen, Maßnahmen planen, durchführen, evaluieren.","Selbstauskunft von Frau H. (ihre Sicht zuerst, z. B. im Strukturmodell mit der SIS), Beobachtung, Wohnumfeld, Hilfsmittel, Angehörige, Arztbrief und Medikationsplan.","§ 4 PflBG behält die Erhebung und Feststellung des individuellen Pflegebedarfs und die Planung der Pflege Pflegefachpersonen vor; Auszubildende wirken unter Anleitung und Verantwortung mit.","Beispiel: „Frau H. kann wegen Schwäche nicht allein duschen (Problem); sie kann sich im Sitzen selbst waschen (Ressource); Ziel: Frau H. duscht in zwei Wochen mit Duschhocker und Bereitschaft der Pflege selbstständig.“"],
+refl:["Was war Frau H. selbst am wichtigsten?"],
+src:["§ 4 PflBG – Vorbehaltene Aufgaben, Pflegeprozessverantwortung (Fassung seit 01.01.2026)","Strukturmodell zur Entbürokratisierung der Pflegedokumentation (SIS)",RP+", CE 01"]},
+
+{id:"c09",y:1,t:"sturz",title:"Nächtlicher Toilettengang mit Sturzrisiko",setting:"Stationäre Akutpflege",dur:"30 Min.",kb:["I","II"],
+pat:"Herr F., 81 Jahre",
+sit:"Herr F. wird wegen einer Herzinsuffizienz behandelt und erhält seit gestern ein Diuretikum. Er muss nachts mehrfach zur Toilette, trägt Hausschuhe ohne Fersenhalt und hat seine Brille oft nicht auf. Bei der Aufnahme erzählte er, er sei zu Hause zweimal gestürzt.",
+tasks:["Welche Sturzrisikofaktoren erkennst du?","Wie sprichst du mit Herrn F. über das Risiko, ohne ihn zu bevormunden?","Welche Maßnahmen schlägst du vor?","Was tust du, wenn du Herrn F. nach einem Sturz auf dem Boden findest?"],
+goals:["Sturzrisiko individuell einschätzen","Prophylaxe gemeinsam mit der betroffenen Person planen"],
+hor:["Frühere Stürze, Nykturie durch Diuretikum, Sehbeeinträchtigung, ungeeignetes Schuhwerk, mögliche Kreislaufreaktionen, fremde Umgebung.","Seine Sicht erfragen, informieren statt verbieten, gemeinsame Absprachen treffen; Selbstbestimmung respektieren.","Klingel und ggf. Urinflasche in Reichweite, Nachtlicht, feste Schuhe, Bett niedrig, Brille griffbereit, langsames Aufstehen; Zeitpunkt der Diuretikagabe mit Ärztin/Arzt abstimmen.","Ruhe bewahren, Hilfe rufen, Bewusstsein, Verletzungen und Schmerzen einschätzen, nicht vorschnell aufrichten, Ärztin/Arzt informieren, Sturzereignis dokumentieren, Ursachen analysieren."],
+refl:["Wie hat Herr F. auf deine Vorschläge reagiert?"],
+src:["DNQP: Expertenstandard „Sturzprophylaxe in der Pflege“ (2. Aktualisierung)",RP+", CE 02"]},
+
+{id:"c10",y:1,t:"vital",title:"Veränderungen erkennen mit dem NEWS2",setting:"Stationäre Akutpflege (Orthopädie)",dur:"30 Min.",kb:["I","III"],
+pat:"Frau Z., 70 Jahre",
+sit:"Frau Z. ist am zweiten Tag nach einer Hüftoperation. Sie sagt, ihr sei „irgendwie komisch“. Du misst: Atemfrequenz 22/min, SpO₂ 94 % ohne Sauerstoff, Blutdruck 105/70 mmHg, Puls 112/min, Temperatur 38,4 °C; sie ist wach und orientiert.",
+tasks:["Berechne den NEWS2-Score und begründe jeden Teilwert.","Welche Reaktion ergibt sich aus dem Score?","Übergib die Situation mit ISBAR an die verantwortliche Pflegefachperson.","Warum ist die Atemfrequenz ein besonders wichtiger Parameter – und wie misst du sie korrekt?"],
+goals:["Vitalzeichen strukturiert bewerten","Abweichungen strukturiert weitergeben"],
+hor:["Atemfrequenz 21–24 = 2; SpO₂ 94–95 % (Skala 1) = 1; systolisch 101–110 = 1; Puls 111–130 = 2; Temperatur 38,1–39,0 = 1; wach = 0; kein Sauerstoff = 0 → Summe 7.","Score ≥ 7 = hohes klinisches Risiko: sofortige ärztliche Notfallbeurteilung, engmaschige bzw. kontinuierliche Überwachung (Eskalationsregeln der Einrichtung).","I: Name, Station; S: Frau Z. fühlt sich unwohl, NEWS2 7; B: Hüft-OP vorgestern; A: Werte; R: bitte sofort ärztliche Beurteilung.","Die Atemfrequenz verändert sich oft früh bei Verschlechterung; eine volle Minute zählen, möglichst unbemerkt (z. B. während der Pulsmessung)."],
+refl:["Hättest du die Verschlechterung ohne Score bemerkt?"],
+src:["Royal College of Physicians: National Early Warning Score (NEWS) 2 (2017)","Eskalationsregeln der eigenen Einrichtung"]},
+
+{id:"c11",y:1,t:"ausscheidung",title:"Kontinenz fördern statt nur Vorlagen wechseln",setting:"Stationäre Langzeitpflege",dur:"45 Min.",kb:["I","II"],
+pat:"Frau R., 80 Jahre",
+sit:"Frau R. sagt leise, sie „schaffe es oft nicht rechtzeitig“. Seit ihrem Einzug trägt sie Inkontinenzhosen und schämt sich dafür. Sie trinkt wenig, „damit nichts passiert“.",
+tasks:["Wie sprichst du das Thema schamsensibel an?","Welche Informationen braucht das Team für eine Einschätzung?","Welche Maßnahmen können die Kontinenz fördern?","Warum ist das Reduzieren der Trinkmenge problematisch?"],
+goals:["Kontinenzsituation einschätzen","Würde und Selbstständigkeit fördern"],
+hor:["Ungestörter Rahmen, sachlich und respektvoll, Alltagssprache, Normalität vermitteln.","Miktionsprotokoll über mehrere Tage (Uhrzeit, Menge, Harndrang, Einnässen, Trinkmenge), Medikamente, Mobilität und Weg zur Toilette, Kleidung, ärztliche Abklärung (z. B. Harnwegsinfekt).","Individuell geplante Toilettengänge nach Ausscheidungsmuster, freier Weg und Licht, leicht zu öffnende Kleidung, Hilfsmittel bedarfsgerecht statt vorschnell; Beckenbodentraining nach Abklärung.","Weniger Trinken konzentriert den Urin, reizt die Blase und erhöht das Risiko von Infekten, Verwirrtheit und Obstipation."],
+refl:["Was hat sich für Frau R. nach dem Gespräch verändert?"],
+src:["DNQP: Expertenstandard „Kontinenzförderung in der Pflege“ (aktualisierte Fassung; vormals „Förderung der Harnkontinenz in der Pflege“)",RP+", CE 02"]},
+
+/* ---------------- 2. LEHRJAHR ---------------- */
+{id:"c12",y:2,t:"arznei",title:"Medikamente richten und verabreichen",setting:"Stationäre Langzeitpflege",dur:"45 Min.",kb:["I","III","IV"],
+pat:"Herr G., 76 Jahre",
+sit:"Herr G. hat eine Herzinsuffizienz, Vorhofflimmern und einen Diabetes mellitus. Er nimmt neun Medikamente, darunter ein Antikoagulans und ein Diuretikum, zur Nacht ein Schlafmittel. Seit einigen Tagen klagt er morgens über Schwindel.",
+tasks:["Wie prüfst du die Medikation vor dem Verabreichen (R-Regel)?","Was beachtest du, bevor du eine Tablette teilst oder mörserst?","Welche Beobachtungen sind bei Antikoagulans und Diuretikum wichtig?","Wie gehst du mit dem Schwindel um? Und was tust du, wenn dir ein Fehler passiert?"],
+goals:["Arzneimittel sicher handhaben","Wirkungen und Nebenwirkungen beobachten"],
+hor:["Richtige Person, richtiges Arzneimittel, richtige Dosis, richtige Applikationsform, richtiger Zeitpunkt, richtige Dokumentation – abgeglichen mit der ärztlichen Anordnung/Medikationsplan.","Nur teilen/mörsern, wenn zulässig (Fachinformation, Apotheke); Retard- und magensaftresistente Präparate nicht ohne Freigabe.","Antikoagulans: Blutungszeichen (Haut, Zahnfleisch, Urin, Stuhl); Diuretikum: Gewicht, Ein-/Ausfuhr, Kreislauf, Sturzrisiko.","Schwindel: Vitalzeichen, Sturzrisiko, Pflegefachperson und Ärztin/Arzt informieren; die PRISCUS-Liste nennt potenziell inadäquate Medikamente im Alter – die Entscheidung trifft die Ärztin/der Arzt. Fehler sofort melden, Patientensicherheit vor Schuldfrage, Fehlermeldesystem (z. B. CIRS)."],
+refl:["Welche Unterbrechungen hast du beim Richten erlebt, und wie hast du dich geschützt?"],
+src:["§ 31a SGB V – Bundeseinheitlicher Medikationsplan","PRISCUS 2.0 – Liste potenziell inadäquater Medikation für ältere Menschen","Fachinformationen der jeweiligen Arzneimittel",RP+", CE 05"]},
+
+{id:"c13",y:2,t:"atmung",title:"Atemnot bei COPD",setting:"Stationäre Akutpflege (Pneumologie)",dur:"45 Min.",kb:["I","II"],
+pat:"Herr N., 69 Jahre",
+sit:"Herr N. wird wegen einer akuten Verschlechterung seiner COPD behandelt. Er sitzt vornübergebeugt an der Bettkante, spricht in kurzen Sätzen und erhält Sauerstoff nach ärztlicher Anordnung. Die Ärztin hat einen Zielbereich für die Sauerstoffsättigung festgelegt.",
+tasks:["Was beobachtest du an der Atmung?","Welche atemerleichternden Positionen und Techniken leitest du an?","Was beachtest du bei der Sauerstoffgabe, und warum wird bei COPD ein Zielbereich festgelegt?","Welche Maßnahmen dienen der Pneumonieprophylaxe?"],
+goals:["Atmung systematisch beobachten","Atemerleichternde Maßnahmen anleiten"],
+hor:["Frequenz, Tiefe, Rhythmus, Einsatz der Atemhilfsmuskulatur, Sprechdyspnoe, Hautfarbe, Husten und Sputum, Bewusstseinslage, Sättigung.","Kutschersitz, Torwartstellung, erhöhter Oberkörper mit abgestützten Armen; Lippenbremse; ruhige Begleitung.","Sauerstoff nur nach ärztlicher Anordnung; bei Risiko für Kohlendioxid-Retention ist häufig ein niedrigerer Zielbereich angeordnet (z. B. 88–92 %). Zeichen wie zunehmende Schläfrigkeit, Kopfschmerz oder Verwirrtheit sofort melden.","Frühmobilisation, Atemübungen, Sekretmanagement, Mundpflege, Aspirationsprophylaxe."],
+refl:["Wie hast du gemerkt, ob die Lippenbremse geholfen hat?"],
+src:["Nationale VersorgungsLeitlinie COPD (Programm für Nationale VersorgungsLeitlinien von BÄK, KBV und AWMF)","S3-Leitlinie „Sauerstoff in der Akuttherapie beim Erwachsenen“ (AWMF)",RP+", CE 05"]},
+
+{id:"c14",y:2,t:"demenz",title:"Abendliche Unruhe – „Ich muss nach Hause“",setting:"Stationäre Langzeitpflege",dur:"45 Min.",kb:["I","II","V"],
+pat:"Frau D., 83 Jahre",
+sit:"Frau D. hat eine Demenz vom Alzheimer-Typ. Jeden Nachmittag gegen 17 Uhr wird sie unruhig, sucht den Ausgang und sagt: „Ich muss nach Hause, die Kinder kommen gleich aus der Schule.“",
+tasks:["Bilde mögliche Verstehenshypothesen: Welches Bedürfnis könnte hinter dem Verhalten stehen?","Wie reagierst du im Gespräch, ohne zu korrigieren oder zu täuschen?","Welche biografischen Informationen könnten helfen?","Wie wird das Vorgehen im Team abgestimmt und überprüft?"],
+goals:["Verhalten als Ausdruck von Bedürfnissen verstehen","Beziehung personzentriert gestalten"],
+hor:["Hypothesen: Bedürfnis nach Sicherheit, Aufgabe und Rolle (Mutter), Tageszeit, Unruhe in der Umgebung, Schmerzen, Hunger, Harndrang, Erschöpfung.","Gefühle aufgreifen („Sie sorgen sich um Ihre Kinder“), von den Kindern erzählen lassen, begleiten, eine sinnvolle Tätigkeit anbieten; Konfrontation mit der Realität vermeiden.","Frühere Tagesabläufe, Rollen, Rituale, Vorlieben, wichtige Menschen – im Gespräch mit Angehörigen.","Fallbesprechung, Verstehenshypothesen und Maßnahmen dokumentieren, Wirkung evaluieren; Schmerzen bei Demenz mit geeignetem Instrument einschätzen (z. B. BESD)."],
+refl:["Was hat Frau D. beruhigt – und was nicht?"],
+src:["DNQP: Expertenstandard „Beziehungsgestaltung in der Pflege von Menschen mit Demenz“ (Aktualisierung in Bearbeitung – jeweils gültige Fassung prüfen)","S3-Leitlinie Demenzen (DGN/DGPPN)","Kitwood, T.: Demenz – Der person-zentrierte Ansatz im Umgang mit verwirrten Menschen",RP+", CE 11"]},
+
+{id:"c15",y:2,t:"chronisch",title:"Neu auf Insulin eingestellt – Unterzuckerung",setting:"Stationäre Akutpflege (Innere Medizin)",dur:"30 Min.",kb:["I","II"],
+pat:"Herr C., 63 Jahre",
+sit:"Herr C. hat einen Diabetes mellitus Typ 2 und wurde neu auf ein Basalinsulin eingestellt. Vor dem Mittagessen ist er zittrig, schwitzt und ist unruhig. Der Blutzucker beträgt 58 mg/dl. Er ist ansprechbar und kann schlucken.",
+tasks:["Benenne die Situation und begründe.","Welche Sofortmaßnahmen ergreifst du?","Welche Ursachen kommen infrage?","Welche Themen gehören in die Schulung von Herrn C.?"],
+goals:["Hypoglykämie erkennen und handeln","Schulungsbedarf ableiten"],
+hor:["Hypoglykämie (unter 70 mg/dl bzw. 3,9 mmol/l) mit typischen Symptomen wie Zittern, Schwitzen, Unruhe, Heißhunger.","Bei erhaltenem Bewusstsein und Schluckfähigkeit schnell wirksame Kohlenhydrate nach Hausstandard, Kontrolle nach ca. 15 Minuten, Pflegefachperson und Ärztin/Arzt informieren. Bei Bewusstseinsstörung keine orale Gabe – Notfall.","Ausgelassene oder verspätete Mahlzeit, Dosis, körperliche Aktivität, Alkohol, eingeschränkte Nierenfunktion.","Symptome erkennen, Messung, Traubenzucker mitführen, Spritztechnik und Wechsel der Injektionsstellen, Verhalten bei Krankheit, Fußinspektion."],
+refl:["Wie sicher warst du, die Symptome richtig zu deuten?"],
+src:["Nationale VersorgungsLeitlinie Typ-2-Diabetes","Praxisempfehlungen der Deutschen Diabetes Gesellschaft (DDG)",RP+", CE 05"]},
+
+{id:"c16",y:2,t:"ernaehrung",title:"Essen und Trinken bei Schluckstörung",setting:"Stationäre Akutpflege (Stroke Unit/Neurologie)",dur:"45 Min.",kb:["I","III"],
+pat:"Frau K., 72 Jahre",
+sit:"Frau K. ist am dritten Tag nach einem Schlaganfall. Die Logopädie hat eine Schluckstörung festgestellt und angedickte Getränke sowie eine angepasste Kostform empfohlen. Du unterstützt sie beim Mittagessen.",
+tasks:["An welchen Zeichen erkennst du eine mögliche Aspiration?","Wie bereitest du Frau K. und die Umgebung vor?","Wie unterstützt du sie beim Essen und danach?","Mit wem arbeitest du zusammen, und wie überwachst du den Ernährungszustand?"],
+goals:["Aspirationsrisiko verringern","Interprofessionell zusammenarbeiten"],
+hor:["Husten oder Räuspern beim/nach dem Schlucken, gurgelnde Stimme, Atemnot, Speisereste im Mund, später Fieber.","Aufrechter Sitz, Kopf leicht nach vorn, ruhige Umgebung, Brille/Prothese, Mundinspektion.","Kleine Portionen, Zeit lassen, nur die empfohlene Konsistenz (z. B. nach IDDSI-Stufen), nach dem Essen noch eine Weile aufrecht bleiben, Mundpflege.","Logopädie, Ärztin/Arzt, Diätassistenz; Gewicht, Ess- und Trinkprotokoll, Ernährungsscreening."],
+refl:["Wie hast du Frau K. Selbstbestimmung beim Essen ermöglicht?"],
+src:["IDDSI – International Dysphagia Diet Standardisation Initiative (Framework)","Leitlinie „Neurogene Dysphagie“ der Deutschen Gesellschaft für Neurologie (DGN)","DNQP: Expertenstandard „Ernährungsmanagement zur Sicherung und Förderung der oralen Ernährung in der Pflege“"]},
+
+{id:"c17",y:2,t:"gesundheit",title:"Rauchstopp nach Herzinfarkt ansprechen",setting:"Stationäre Akutpflege (Kardiologie)",dur:"30 Min.",kb:["II","V"],
+pat:"Herr J., 54 Jahre",
+sit:"Herr J. hatte einen Herzinfarkt und hat einen Stent erhalten. Er raucht seit seiner Jugend und sagt: „Jetzt aufzuhören bringt doch eh nichts mehr.“",
+tasks:["Ordne Herrn J. in das Transtheoretische Modell ein.","Wie gestaltest du das Gespräch nach den Prinzipien des Motivational Interviewing?","Welche Unterstützungsangebote gibt es?","Ordne die Maßnahme der primären, sekundären oder tertiären Prävention zu."],
+goals:["Gesundheitsverhalten verstehen","Motivierend beraten"],
+hor:["Absichtslosigkeit (Präkontemplation).","Offene Fragen, aktives Zuhören, Ambivalenz würdigen, Selbstwirksamkeit stärken, nicht drängen oder belehren; Erlaubnis für Informationen einholen.","Ärztliche Beratung, ggf. medikamentöse Unterstützung nach ärztlicher Entscheidung, kostenfreie Rauchstopp-Beratungsangebote, kardiologische Rehabilitation.","Tertiärprävention (Verhinderung von Folgeschäden bei bestehender Erkrankung)."],
+refl:["Wer hat im Gespräch mehr gesprochen – du oder Herr J.?"],
+src:["WHO: Ottawa-Charta zur Gesundheitsförderung (1986)","Prochaska, J. O. & DiClemente, C. C.: Transtheoretisches Modell","Miller, W. R. & Rollnick, S.: Motivational Interviewing","S3-Leitlinie „Rauchen und Tabakabhängigkeit: Screening, Diagnostik und Behandlung“ (AWMF)",RP+", CE 04"]},
+
+{id:"c18",y:2,t:"hygiene",title:"Pflege bei MRSA-Nachweis",setting:"Stationäre Akutpflege",dur:"30 Min.",kb:["I","II","IV"],
+pat:"Herr V., 77 Jahre",
+sit:"Beim Aufnahmescreening wird bei Herrn V. MRSA im Nasenvorhof nachgewiesen. Er hat eine Wunde am Unterschenkel. Seine Ehefrau besucht ihn täglich und ist sehr verunsichert: „Ist das ansteckend für mich?“",
+tasks:["Erkläre den Unterschied zwischen Besiedlung und Infektion.","Welche Maßnahmen gelten nach dem Hygieneplan?","Wie informierst du die Ehefrau verständlich?","Was versteht man unter Dekolonisierung?"],
+goals:["Hygienemaßnahmen begründet umsetzen","Angehörige sachlich informieren"],
+hor:["Besiedlung: Nachweis ohne Krankheitszeichen; Infektion: Erreger verursacht Krankheitszeichen.","Basishygiene und ergänzende Barrieremaßnahmen gemäß Risikobewertung und Hygieneplan (z. B. Einzelzimmer, Schutzkittel und Handschuhe bei Kontakt, Mund-Nasen-Schutz bei bestimmten Tätigkeiten, patientenbezogene Materialien, Flächendesinfektion).","Für gesunde Angehörige ist das Risiko in der Regel gering; Händedesinfektion nach dem Besuch; Nähe und Berührung sind möglich – nach Vorgaben der Einrichtung.","Ärztlich angeordnete Sanierung (z. B. Nasensalbe, antiseptische Waschungen, Mundspülung) mit anschließenden Kontrollabstrichen; Stigmatisierung vermeiden."],
+refl:["Wie hat sich Herr V. in der Isolierung gefühlt?"],
+src:["KRINKO-Empfehlung zur Prävention und Kontrolle von MRSA in medizinischen und pflegerischen Einrichtungen (RKI, 2014)","§ 23 IfSG – Hygienepläne",RP+", CE 05"]},
+
+{id:"c19",y:2,t:"kinder",title:"Kleinkind mit Magen-Darm-Infekt",setting:"Pädiatrische Versorgung",dur:"45 Min.",kb:["I","II"],
+pat:"M., 3 Jahre (mit Mutter)",
+sit:"M. hat seit zwei Tagen Erbrechen und Durchfall. Er weint viel und will nicht trinken. Seine Mutter ist mit aufgenommen worden und wirkt erschöpft.",
+tasks:["Welche Zeichen einer Austrocknung beobachtest du bei einem Kleinkind?","Wie förderst du die Flüssigkeitsaufnahme – unter Einbezug der Mutter?","Mit welchem altersgerechten Instrument schätzt du Schmerz/Unbehagen ein?","Welche Hygienemaßnahmen gelten, und wie beziehst du die Mutter ein?"],
+goals:["Kinder altersgerecht beobachten","Eltern als Partner einbeziehen"],
+hor:["Weniger nasse Windeln, trockene Schleimhäute, keine Tränen, eingesunkene Augen, Schläfrigkeit, Gewichtsverlust (täglich wiegen, gleiche Waage).","Orale Rehydratationslösung nach ärztlicher Anordnung in kleinen Mengen häufig (Löffel, Becher, Spritze); Mutter anleiten und entlasten.","Bis zum Ende des 4. Lebensjahres z. B. die Kindliche Unbehagens- und Schmerzskala (KUSS) nach Büttner.","Kontaktschutz nach Hygieneplan, Händehygiene auch für die Mutter, Wickelhygiene; Eltern haben ein Recht, bei ihrem Kind zu sein (EACH-Charta)."],
+refl:["Was hat die Mutter gebraucht, damit sie dich unterstützen konnte?"],
+src:["EACH-Charta (European Association for Children in Hospital)","Büttner, W. et al.: Kindliche Unbehagens- und Schmerzskala (KUSS)","S2k-Leitlinie „Akute infektiöse Gastroenteritis im Säuglings-, Kindes- und Jugendalter“ (AWMF)",RP+", CE 10"]},
+
+{id:"c20",y:2,t:"lebenswelt",title:"Einzug ins Pflegeheim",setting:"Stationäre Langzeitpflege",dur:"45 Min.",kb:["I","II","III"],
+pat:"Frau O., 79 Jahre",
+sit:"Frau O. ist nach einem Sturz und zunehmender Gebrechlichkeit vor zwei Wochen eingezogen. Sie zieht sich zurück und isst allein im Zimmer. Früher war sie Schneiderin und sang im Kirchenchor.",
+tasks:["Welche Bedeutung hat der Einzug für Frau O.?","Wie gestaltest du die ersten Wochen lebensweltorientiert?","Welche Angebote mit Bezug zur Biografie sind denkbar?","Welche Rolle spielen Angehörige und zusätzliche Betreuungskräfte?"],
+goals:["Lebenswelt und Biografie einbeziehen","Selbstbestimmung im Heimalltag fördern"],
+hor:["Kritisches Lebensereignis mit Verlusten (Wohnung, Selbstständigkeit, Rollen); Rückzug kann Trauer ausdrücken.","Bezugspflege, eigene Möbel und Gegenstände, gewohnter Tagesrhythmus, Wahlmöglichkeiten, Zeit für Gespräche.","Freiwillige Angebote wie Handarbeit, Singkreis, Seelsorge – Frau O. entscheidet.","Angehörige einbinden; zusätzliche Betreuung und Aktivierung (§ 43b SGB XI) abstimmen; anhaltende Niedergeschlagenheit ärztlich abklären lassen."],
+refl:["Was weißt du jetzt über Frau O., das du vorher nicht wusstest?"],
+src:["§ 43b SGB XI – Zusätzliche Betreuung und Aktivierung in stationären Pflegeeinrichtungen","Charta der Rechte hilfe- und pflegebedürftiger Menschen (Pflege-Charta)",RP+", CE 09"]},
+
+{id:"c21",y:2,t:"periop",title:"Vor und nach einer laparoskopischen Gallenblasen-OP",setting:"Stationäre Akutpflege (Chirurgie)",dur:"60 Min.",kb:["I","III"],
+pat:"Herr I., 58 Jahre",
+sit:"Herr I. wird morgen geplant laparoskopisch an der Gallenblase operiert. Nach der OP kehrt er aus dem Aufwachraum auf deine Station zurück und klagt über Schmerzen in der rechten Schulter.",
+tasks:["Welche Punkte umfasst die präoperative Vorbereitung?","Welche Informationen brauchst du bei der Übernahme aus dem Aufwachraum?","Was überwachst du postoperativ?","Wie erklärst du dir den Schulterschmerz, und welche Prophylaxen sind wichtig?"],
+goals:["Perioperative Pflege strukturiert planen","Sichere Übergaben gestalten"],
+hor:["Ärztliche Aufklärung und Einwilligung erfolgt, Nüchternheit nach Vorgabe der Anästhesie, Schmuck/Prothesen, Identifikation, Thromboseprophylaxe und Prämedikation nach Anordnung, Checkliste der Einrichtung.","Eingriff, Narkoseverlauf, Vitalwerte, Schmerzen und Analgesie, Drainagen, Zugänge, Anordnungen zu Kostaufbau und Mobilisation.","Vitalzeichen und Bewusstsein, Schmerz (NRS), Wundverband (Nachblutung), Übelkeit, Ausscheidung, Kostaufbau.","Typisch nach Laparoskopie: Reizung durch das eingebrachte Gas mit ausstrahlendem Schulterschmerz – trotzdem melden und abklären lassen. Frühmobilisation, Thrombose- und Pneumonieprophylaxe."],
+refl:["Welche Information hat dir bei der Übergabe gefehlt?"],
+src:["WHO: Surgical Safety Checklist (2009)","S3-Leitlinie „Prophylaxe der venösen Thromboembolie (VTE)“ (AWMF)","DNQP: Expertenstandard „Schmerzmanagement in der Pflege“",RP+", CE 05"]},
+
+{id:"c22",y:2,t:"schmerz",title:"Postoperative Schmerzen einschätzen",setting:"Stationäre Akutpflege (Orthopädie)",dur:"30 Min.",kb:["I","II"],
+pat:"Frau Y., 68 Jahre",
+sit:"Frau Y. ist am ersten Tag nach einer Knieendoprothese. Sie gibt in Ruhe einen Schmerz von 7 (NRS) an, möchte aber „nicht klagen“ und lehnt die Bedarfsmedikation ab: „Ich will nicht abhängig werden.“",
+tasks:["Wie schätzt du den Schmerz systematisch ein?","Wie gehst du mit der Ablehnung um?","Welche nicht-medikamentösen Maßnahmen kannst du anbieten?","Wie evaluierst du die Wirkung, und was dokumentierst du?"],
+goals:["Schmerz systematisch erfassen","Patientenentscheidungen informiert begleiten"],
+hor:["Lokalisation, Intensität in Ruhe und Bewegung, Qualität, Verlauf, Auswirkungen auf Schlaf und Mobilisation; maßgeblich ist die Angabe der Patientin.","Bedenken erfragen, verständlich informieren, Ärztin/Arzt einbeziehen; die Entscheidung respektieren, Bedeutung der Schmerzlinderung für die Mobilisation erklären.","Kälteanwendung nach Anordnung, Positionierung, Entspannung, Ablenkung.","Wirkung nach Gabe erneut einschätzen (Zeitpunkt abhängig von Applikationsform), Nebenwirkungen beobachten (Übelkeit, Obstipation, Müdigkeit), alles dokumentieren."],
+refl:["Wie hat sich Frau Y. nach dem Gespräch entschieden?"],
+src:["DNQP: Expertenstandard „Schmerzmanagement in der Pflege“",RP+", CE 05"]},
+
+{id:"c23",y:2,t:"wunde",title:"Versorgung eines Ulcus cruris venosum",setting:"Ambulante Pflege",dur:"60 Min.",kb:["I","II","III"],
+pat:"Herr U., 71 Jahre",
+sit:"Herr U. hat seit fünf Monaten eine offene Wunde oberhalb des Innenknöchels. Er hat ausgeprägte Krampfadern. Ärztlich ist eine Kompressionstherapie verordnet, die er ungern trägt.",
+tasks:["Welche Merkmale erfasst und dokumentierst du beim Wundassessment?","Warum ist die Behandlung der Ursache entscheidend?","Wie führst du einen hygienischen Verbandwechsel durch?","Wie unterstützt du Herrn U. im Selbstmanagement?"],
+goals:["Wunden fachgerecht einschätzen","Selbstmanagement und Lebensqualität fördern"],
+hor:["Lokalisation, Größe, Wundgrund, Exsudat, Geruch, Wundrand und -umgebung, Infektzeichen, Schmerz; Fotodokumentation nur mit Einwilligung; regelmäßige Verlaufsbeurteilung.","Ursache ist die chronisch-venöse Insuffizienz; Kompression nach ärztlicher Verordnung ist zentral, eine arterielle Abklärung erfolgt vorher ärztlich.","Non-Touch-Technik, Wundreinigung, Wundauflage nach Verordnung, Wundumgebung schützen.","Gründe der Ablehnung erfragen (Schmerz, Anziehen, Wärme), An- und Ausziehhilfen, Bewegung im Sprunggelenk, Beine hochlagern, Hautpflege; Auswirkungen auf Alltag und soziale Teilhabe ansprechen."],
+refl:["Was belastet Herrn U. an der Wunde am meisten?"],
+src:["DNQP: Expertenstandard „Pflege von Menschen mit chronischen Wunden“ (2. Aktualisierung 2025)","S3-Leitlinie „Lokaltherapie schwerheilender und/oder chronischer Wunden aufgrund von peripherer arterieller Verschlusskrankheit, Diabetes mellitus oder chronischer venöser Insuffizienz“ (AWMF)",RP+", CE 05"]},
+
+{id:"c24",y:2,t:"ausscheidung",title:"Dauerkatheter – Infektionen vermeiden",setting:"Stationäre Akutpflege",dur:"30 Min.",kb:["I","IV"],
+pat:"Herr Q., 74 Jahre",
+sit:"Herr Q. hat seit vier Tagen nach einem Harnverhalt einen transurethralen Dauerkatheter. Der Urin ist heute trüb, die Temperatur liegt bei 37,9 °C. Der Urinbeutel liegt auf dem Boden.",
+tasks:["Warum muss die Indikation für den Katheter täglich überprüft werden?","Welche Fehler erkennst du, und wie behebst du sie?","Wie pflegst du den Katheter im Alltag?","Welche Beobachtungen meldest du?"],
+goals:["Katheterassoziierte Infektionen verhindern","Beobachtungen fachgerecht weitergeben"],
+hor:["Jeder Liegetag erhöht das Infektionsrisiko; Indikation und Liegedauer werden ärztlich geprüft, die Pflege erinnert aktiv daran.","Beutel nie auf den Boden, immer unter Blasenniveau, Schlauch ohne Knick, geschlossenes System nicht diskonnektieren.","Händehygiene und Handschuhe, Entleerung mit sauberem patientenbezogenem Gefäß, Reinigung des Harnröhrenausgangs im Rahmen der Körperpflege; keine routinemäßigen Spülungen.","Fieber, Schmerzen, trüber oder übelriechender Urin, Blutbeimengungen, neue Verwirrtheit."],
+refl:["Warum lag der Beutel auf dem Boden – was lässt sich daran im Team ändern?"],
+src:["KRINKO-Empfehlung „Prävention und Kontrolle Katheter-assoziierter Harnwegsinfektionen“ (RKI, 2015)"]},
+
+/* ---------------- 3. LEHRJAHR ---------------- */
+{id:"c25",y:3,t:"akut",title:"Reanimation auf der Normalstation",setting:"Stationäre Akutpflege (Chirurgie)",dur:"60 Min. (inkl. Übung am Phantom)",kb:["I","III"],
+pat:"Herr X., 66 Jahre",
+sit:"Herr X. ist am dritten Tag nach einer Darmoperation. Du betrittst das Zimmer und findest ihn im Bett, er reagiert nicht auf Ansprache und atmet nicht normal.",
+tasks:["Beschreibe deine ersten Schritte in der richtigen Reihenfolge.","Welche Rollen werden im Team verteilt?","Nenne die Qualitätsmerkmale einer wirksamen Herzdruckmassage.","Was gehört zur Nachbereitung?"],
+goals:["Lebenserhaltende Sofortmaßnahmen sicher einleiten","Im Team strukturiert handeln"],
+hor:["Ansprechen und an den Schultern rütteln, Hilfe rufen und internen Notruf auslösen, Atemwege freimachen, Atmung höchstens 10 Sekunden prüfen; keine normale Atmung (auch Schnappatmung) → sofort Herzdruckmassage 30:2 mit Beutel-Maske-Beatmung, Defibrillator so früh wie möglich, Unterbrechungen minimieren.","Thoraxkompression (Wechsel etwa alle 2 Minuten), Atemweg/Beatmung, Defibrillator, Dokumentation/Zeit, Teamleitung.","Mitte des Brustkorbs (untere Hälfte des Brustbeins), Tiefe 5–6 cm, Frequenz 100–120/min, vollständige Entlastung, harte Unterlage bzw. Reanimationsfunktion des Bettes.","Debriefing im Team, Dokumentation, Begleitung der Angehörigen, Material auffüllen; im Vorfeld bekannte Therapieziele und Patientenverfügung beachten."],
+refl:["Was lief im Team gut, was würdet ihr beim nächsten Mal anders machen?"],
+src:["European Resuscitation Council (ERC): Leitlinien 2025; deutsche Kurzfassung: GRC „Reanimation 2025 – Leitlinien kompakt“","§ 5 Abs. 3 PflBG (Einleitung lebenserhaltender Sofortmaßnahmen)",RP+", CE 06"]},
+
+{id:"c26",y:3,t:"beratung",title:"Angehörige zur Insulingabe anleiten",setting:"Stationäre Akutpflege",dur:"60 Min.",kb:["II","III"],
+pat:"Herr L., 80 Jahre, und seine Tochter",
+sit:"Herr L. wird in drei Tagen entlassen. Wegen Händezittern und Sehschwäche kann er den Insulinpen nicht sicher bedienen. Seine Tochter möchte die Gabe übernehmen, ist aber sehr unsicher.",
+tasks:["Grenze Information, Schulung, Beratung und Anleitung voneinander ab.","Plane eine Mikroschulung (Lernziel, Ablauf, Material, Zeit).","Wie überprüfst du, ob die Tochter alles verstanden hat?","Was dokumentierst du, und wie sicherst du die Übergabe in die Häuslichkeit?"],
+goals:["Edukative Angebote planen und durchführen","Lernerfolg überprüfen"],
+hor:["Information: Wissen weitergeben; Schulung: geplantes, zielorientiertes Vermitteln von Fertigkeiten; Beratung: ergebnisoffener Problemlöseprozess; Anleitung: konkretes Einüben einer Handlung.","Lernziel z. B. „Die Tochter verabreicht das Insulin mit dem Pen korrekt und erkennt Zeichen einer Unterzuckerung.“; Vorwissen erfragen, vormachen – erklären – nachmachen lassen – üben, schriftliches Material, mehrere Termine.","Teach-back: Tochter erklärt und demonstriert selbst; Rückfragen klären.","Inhalte, Lernstand und offene Punkte dokumentieren; Überleitung an Hausarztpraxis bzw. ambulanten Pflegedienst."],
+refl:["Woran hast du gemerkt, dass die Tochter sicherer wurde?"],
+src:["§ 5 Abs. 3 PflBG (Beratung, Anleitung und Unterstützung als Ausbildungsziel)","DNQP: Expertenstandard „Entlassungsmanagement in der Pflege“",RP+", CE 04 und CE 07"]},
+
+{id:"c27",y:3,t:"entlassung",title:"Entlassung nach Oberschenkelhalsfraktur",setting:"Stationäre Akutpflege (Unfallchirurgie/Alterstraumatologie)",dur:"60 Min.",kb:["I","III","IV"],
+pat:"Frau A., 85 Jahre",
+sit:"Frau A. wurde nach einer Oberschenkelhalsfraktur mit einer Endoprothese versorgt. Sie wohnt mit ihrem 88-jährigen Ehemann im zweiten Stock ohne Aufzug und geht mit dem Rollator kurze Strecken. Der Ehemann sagt: „Das schaffen wir schon.“",
+tasks:["Welche Aspekte gehören zum initialen Assessment des nachstationären Unterstützungsbedarfs?","Wer muss beteiligt werden?","Welche Leistungen und Hilfsmittel kommen infrage?","Wie wird die Entlassung evaluiert?"],
+goals:["Entlassung frühzeitig und interprofessionell planen","Versorgungskontinuität sichern"],
+hor:["Frühzeitig (möglichst bei Aufnahme): Mobilität und Treppensteigen, Selbstversorgung, Schmerzen, Kognition, Wohnsituation, Belastbarkeit des Ehemanns, Wünsche des Paares.","Frau A. und Ehemann, Ärztin/Arzt, Sozialdienst, Physio- und Ergotherapie, Hausarztpraxis, ambulanter Pflegedienst, Pflegeberatung.","Hilfsmittel, Anschlussrehabilitation bzw. geriatrische Rehabilitation, ggf. Antrag auf Pflegegrad, Kurzzeit- oder Übergangspflege, Entlassmanagement nach § 39 Abs. 1a SGB V, Pflegeberatung nach § 7a SGB XI.","Abstimmung vor der Entlassung, Kontaktaufnahme nach der Entlassung (z. B. telefonisch) zur Überprüfung der Versorgung, Dokumentation."],
+refl:["Wie hast du die Sorge hinter „Das schaffen wir schon“ wahrgenommen?"],
+src:["DNQP: Expertenstandard „Entlassungsmanagement in der Pflege“ (2. Aktualisierung 2019)","§ 39 Abs. 1a SGB V – Entlassmanagement","§ 7a SGB XI – Pflegeberatung",RP+", CE 07"]},
+
+{id:"c28",y:3,t:"ethik",title:"Bettgitter auf Wunsch des Sohnes?",setting:"Stationäre Akutpflege",dur:"60 Min.",kb:["II","IV","V"],
+pat:"Herr M., 87 Jahre",
+sit:"Herr M. hat nach einer Operation ein Delir. Nachts nestelt er an der Bettdecke und versucht aufzustehen. Sein Sohn fordert: „Machen Sie das Bettgitter hoch und schnallen Sie ihn fest, bevor etwas passiert.“ Herr M. ist aktuell nicht einwilligungsfähig. Ob eine Vorsorgevollmacht besteht, ist unklar.",
+tasks:["Was sind freiheitsentziehende Maßnahmen (FEM)? Nenne Beispiele.","Welche rechtlichen Voraussetzungen müssen erfüllt sein?","Welche Alternativen zu FEM gibt es bei Herrn M.?","Führe eine ethische Fallbesprechung anhand der vier Prinzipien durch."],
+goals:["Rechtliche Grundlagen von FEM anwenden","Ethisch begründet entscheiden"],
+hor:["Maßnahmen, die die Bewegungsfreiheit ohne wirksame Einwilligung einschränken: Bettgitter, Gurte, Stecktische, abgeschlossene Türen, Medikamente mit dem Zweck der Ruhigstellung.","Einwilligungsfähige Personen entscheiden selbst. Sonst entscheidet eine bevollmächtigte Person (schriftliche Vollmacht, die FEM ausdrücklich umfasst, § 1820 BGB) oder eine rechtliche Betreuung; regelmäßige oder länger dauernde FEM in Einrichtungen brauchen zusätzlich die Genehmigung des Betreuungsgerichts (§ 1831 Abs. 4 BGB). Der Wunsch eines Angehörigen ohne Vertretungsbefugnis reicht nicht. In akuter Gefahr nur kurzfristig über rechtfertigenden Notstand (§ 34 StGB) – unverzüglich ärztlich und rechtlich klären.","Niedrigbett, Sensormatte, Hüftprotektoren, Sitzwache/Angehörige, Delirprävention (Orientierung, Brille und Hörgerät, Schlaf, Schmerz- und Ausscheidungsmanagement, Mobilisation), ärztliche Abklärung der Delirursachen. Bettgitter können durch Übersteigen das Verletzungsrisiko erhöhen.","Autonomie, Fürsorge, Nichtschaden, Gerechtigkeit abwägen; Sohn einbeziehen und seine Angst ernst nehmen."],
+refl:["Welche Werte standen für dich im Konflikt?"],
+src:["§§ 1820, 1831 BGB (Vorsorgevollmacht; freiheitsentziehende Maßnahmen)","§ 34 StGB – Rechtfertigender Notstand","Leitlinie FEM – Evidenzbasierte Praxisleitlinie zur Vermeidung von freiheitseinschränkenden Maßnahmen in der beruflichen Altenpflege","Werdenfelser Weg (verfahrensrechtlicher Ansatz zur Vermeidung von FEM)","Beauchamp, T. L. & Childress, J. F.: Principles of Biomedical Ethics",RP+", CE 08 und CE 11"]},
+
+{id:"c29",y:3,t:"kinder",title:"Unklare Hämatome bei einem Säugling",setting:"Pädiatrische Versorgung",dur:"45 Min.",kb:["III","IV"],
+pat:"Säugling J., 5 Monate, mit Eltern",
+sit:"J. wird wegen Trinkschwäche aufgenommen. Beim Wickeln fallen dir mehrere Hämatome an Oberarm und Brustkorb in unterschiedlichen Farben auf. Die Eltern sagen, J. sei „vom Wickeltisch gefallen“. J. kann sich noch nicht selbstständig fortbewegen.",
+tasks:["Welche Beobachtungen sind Warnzeichen?","Wie gehst du vor? Beschreibe Dokumentation und Weitergabe.","Welche rechtlichen Grundlagen gibt es für die Weitergabe von Informationen?","Welche Haltung nimmst du gegenüber den Eltern ein?"],
+goals:["Anhaltspunkte für Kindeswohlgefährdung erkennen","Verfahrenssicher und professionell handeln"],
+hor:["Hämatome bei noch nicht mobilen Säuglingen, ungewöhnliche Lokalisationen (z. B. Rumpf, Ohren, Hals), unterschiedliche Stadien, Erklärung passt nicht zum Entwicklungsstand.","Objektiv dokumentieren (Lokalisation, Größe, Farbe, Datum/Uhrzeit, Aussagen der Eltern wörtlich), keine eigenen Ermittlungen oder Suggestivfragen, unverzüglich verantwortliche Pflegefachperson und Ärztin/Arzt informieren, Kinderschutzverfahren der Klinik (z. B. Kinderschutzgruppe) einhalten.","§ 4 KKG regelt Vorgehen und Befugnis von Berufsgeheimnisträgern zur Information des Jugendamts bei gewichtigen Anhaltspunkten; § 8a SGB VIII Schutzauftrag des Jugendamts.","Professionell, ruhig, nicht anklagend; Schutz des Kindes steht im Vordergrund; Eltern weiter in die Versorgung einbeziehen, solange keine anderen Absprachen bestehen."],
+refl:["Was hat diese Situation bei dir ausgelöst, und wer kann dich unterstützen?"],
+src:["§ 4 KKG – Beratung und Übermittlung von Informationen durch Geheimnisträger bei Kindeswohlgefährdung","§ 8a SGB VIII – Schutzauftrag bei Kindeswohlgefährdung","AWMF S3+-Kinderschutzleitlinie (Kindesmisshandlung, -missbrauch, -vernachlässigung unter Einbindung der Jugendhilfe und Pädagogik)",RP+", CE 10"]},
+
+{id:"c30",y:3,t:"palliativ",title:"Begleitung in der Sterbephase",setting:"Stationäre Akutpflege",dur:"60 Min.",kb:["I","II","V"],
+pat:"Herr B., 72 Jahre, und seine Ehefrau",
+sit:"Herr B. hat ein fortgeschrittenes Pankreaskarzinom. Seit gestern ist er kaum noch ansprechbar, isst und trinkt nicht mehr, seine Atmung ist rasselnd. Eine Patientenverfügung lehnt lebensverlängernde Maßnahmen ab. Die Ehefrau fragt: „Verdurstet er jetzt?“",
+tasks:["Welche Zeichen sprechen für die Sterbephase?","Welche pflegerischen Maßnahmen lindern Symptome?","Wie antwortest du der Ehefrau?","Welche Bedeutung hat die Patientenverfügung, und wie sorgst du für dich selbst?"],
+goals:["Sterbende und Angehörige begleiten","Symptome pflegerisch lindern"],
+hor:["Zunehmende Schwäche und Schläfrigkeit, Rückzug, abnehmende Nahrungs- und Flüssigkeitsaufnahme, veränderte Atmung (Rasselatmung, Pausen), kühle, marmorierte Extremitäten.","Sorgfältige Mundpflege und Mundbefeuchtung, Positionierung (z. B. Seitenlage bei Rasselatmung), Ruhe, Medikamente nach ärztlicher Anordnung; Absaugen hilft bei Rasselatmung meist nicht und belastet.","Empathisch: Das Bedürfnis nach Essen und Trinken nimmt am Lebensende ab; das Durstgefühl entsteht vor allem durch Mundtrockenheit und lässt sich durch Mundpflege lindern; Ehefrau zur Mundpflege einladen.","Die Patientenverfügung ist verbindlich, wenn sie auf die Situation zutrifft (§ 1827 BGB). Selbstsorge: Gespräche im Team, Rituale, Supervision."],
+refl:["Was hat dich in dieser Begleitung berührt?"],
+src:["S3-Leitlinie Palliativmedizin für Patienten mit einer nicht-heilbaren Krebserkrankung (Leitlinienprogramm Onkologie)","§ 1827 BGB – Patientenverfügung","Charta zur Betreuung schwerstkranker und sterbender Menschen in Deutschland",RP+", CE 08"]},
+
+{id:"c31",y:3,t:"prozess",title:"Eine Zimmergruppe verantwortlich steuern",setting:"Stationäre Akutpflege",dur:"Ganze Schicht (Begleitung)",kb:["I","III","IV"],
+pat:"Frau G., 79 J. (Pneumonie, Sauerstoff); Herr K., 65 J. (1. Tag nach OP); Frau L., 90 J. (Demenz, Sturzrisiko); Herr W., 58 J. (Entlassung heute)",
+sit:"Du übernimmst im Frühdienst unter Aufsicht die Verantwortung für vier Personen. Eine Pflegefachassistenzperson unterstützt dich.",
+tasks:["Priorisiere die Versorgung und begründe.","Welche Aufgaben darfst du delegieren, welche nicht?","Übergib einen Patienten am Ende der Schicht mit ISBAR.","Wie evaluierst du den Pflegeprozess am Schichtende?"],
+goals:["Pflegeprozess für mehrere Menschen steuern","Delegieren und Verantwortung reflektieren"],
+hor:["Nach Risiko und Dringlichkeit: Herr K. (postoperative Überwachung) und Frau G. (Atmung) zuerst einschätzen, dann Frau L. (Sicherheit), Entlassung von Herrn W. zeitlich planen.","Durchführung einzelner Maßnahmen (z. B. Körperpflege bei stabilen Personen) kann delegiert werden; Erhebung des Pflegebedarfs, Planung, Steuerung und Evaluation sowie Qualitätssicherung bleiben Pflegefachpersonen vorbehalten (§ 4 PflBG). Kriterien: Qualifikation, Stabilität der Situation, klare Information, Rückmeldung.","I – Identifikation, S – Situation, B – Hintergrund, A – Einschätzung, R – Empfehlung.","Ziele überprüfen, Maßnahmenplan anpassen, Dokumentation vervollständigen, offene Punkte übergeben."],
+refl:["Wann hast du dich überfordert gefühlt, und wie bist du damit umgegangen?"],
+src:["§ 4 PflBG – Vorbehaltene Aufgaben, Pflegeprozessverantwortung (Fassung seit 01.01.2026)","PflAPrV Anlage 2, Kompetenzbereich I",RP+", CE 05"]},
+
+{id:"c32",y:3,t:"psych",title:"Hoffnungslosigkeit ansprechen",setting:"Psychiatrische Versorgung",dur:"45 Min.",kb:["II","III"],
+pat:"Frau S., 34 Jahre",
+sit:"Frau S. ist seit einer Woche wegen einer mittelgradigen depressiven Episode auf der Station. Sie zieht sich zurück. Im Gespräch sagt sie leise: „Es wäre für alle besser, wenn ich nicht mehr da wäre.“",
+tasks:["Wie schätzt du die Aussage ein?","Wie sprichst du sie darauf an? Formuliere konkret.","Was tust du unmittelbar danach?","Wie gestaltest du die Beziehung im Stationsalltag – und wie gehst du mit deinen eigenen Gefühlen um?"],
+goals:["Hinweise auf Suizidalität erkennen und ansprechen","Sicher und beziehungsorientiert handeln"],
+hor:["Ernst nehmen – möglicher Hinweis auf Suizidgedanken.","Direkt, ruhig und offen nachfragen, z. B. „Denken Sie daran, sich das Leben zu nehmen?“ Offenes Ansprechen erhöht das Risiko nicht und kann entlasten.","Frau S. nicht allein lassen, bis die verantwortliche Pflegefachperson bzw. Ärztin/Arzt übernommen hat; sofort informieren, Aussage wörtlich dokumentieren, Vorgehen nach Stationskonzept; keine Geheimhaltung versprechen.","Verfügbarkeit, Verlässlichkeit, Tagesstruktur und kleine Schritte; keine Appelle wie „Reißen Sie sich zusammen“. Eigene Belastung im Team oder in der Supervision besprechen."],
+refl:["Was hat dir geholfen, die Frage auszusprechen?"],
+src:["Nationale VersorgungsLeitlinie Unipolare Depression","Peplau, H. E.: Interpersonale Beziehungen in der Pflege",RP+", CE 11"]},
+
+{id:"c33",y:3,t:"reha",title:"Interprofessionelle Fallbesprechung nach Schlaganfall",setting:"Rehabilitation",dur:"60 Min.",kb:["I","III"],
+pat:"Herr E., 61 Jahre",
+sit:"Herr E. ist vier Wochen nach einem Schlaganfall in der Rehaklinik. Er hat eine Halbseitenlähmung rechts und eine Aphasie. Er möchte zurück in seine Wohnung und irgendwann wieder in seiner Werkstatt arbeiten.",
+tasks:["Beschreibe die Situation von Herrn E. mit den Komponenten der ICF.","Welchen Beitrag leistet die Pflege in der Fallbesprechung?","Wie setzt du therapeutische Inhalte im Pflegealltag um?","Wie kommunizierst du mit Herrn E. trotz Aphasie?"],
+goals:["Rehabilitation teilhabeorientiert denken","Im interprofessionellen Team mitwirken"],
+hor:["Körperfunktionen/-strukturen (Parese, Sprache), Aktivitäten (Gehen, Waschen, Ankleiden), Teilhabe (Wohnen, Arbeit), Umwelt- und personbezogene Faktoren.","Beobachtungen rund um die Uhr, Alltagsfähigkeiten, Wünsche und Ziele von Herrn E. einbringen; gemeinsame, überprüfbare Ziele vereinbaren.","Transfers, Positionierung und Sprachanregung nach Absprache mit Physio-, Ergotherapie und Logopädie im Alltag üben (therapeutisch aktivierende Pflege).","Einfache Sätze, Zeit lassen, Ja/Nein-Fragen, Gestik und Bilder nutzen, nicht für ihn sprechen, erwachsene Sprache verwenden."],
+refl:["Welche Information aus der Pflege war für das Team neu?"],
+src:["WHO: Internationale Klassifikation der Funktionsfähigkeit, Behinderung und Gesundheit (ICF, 2001)",RP+", CE 07"]}
+];
+
+/* =========================================================
+   Speicher
+   ========================================================= */
+const KEY = "pflegeLernkarten_v1";
+const YEAR_LABEL = {1:"1. Lehrjahr",2:"2. Lehrjahr",3:"3. Lehrjahr"};
+const STATUS_LABEL = {offen:"Offen",bearbeitung:"In Bearbeitung",erledigt:"Erledigt"};
+const KB_LABEL = {
+  "I":"I – Pflegeprozesse und Pflegediagnostik verantwortlich planen, organisieren, gestalten, durchführen, steuern und evaluieren",
+  "II":"II – Kommunikation und Beratung personen- und situationsorientiert gestalten",
+  "III":"III – Intra- und interprofessionelles Handeln in unterschiedlichen systemischen Kontexten verantwortlich gestalten und mitgestalten",
+  "IV":"IV – Das eigene Handeln auf der Grundlage von Gesetzen, Verordnungen und ethischen Leitlinien reflektieren und begründen",
+  "V":"V – Das eigene Handeln auf der Grundlage von wissenschaftlichen Erkenntnissen und berufsethischen Werthaltungen und Einstellungen reflektieren und begründen"
+};
+
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function freshState(){
+  return {version:1, topics:clone(DEFAULT_TOPICS), cards:clone(DEFAULT_CARDS).map(c=>({...c,builtIn:true})),
+    learners:[{id:"l_demo",name:"Lernende/r 1"}], currentLearner:"l_demo", progress:{}, settings:{hideHorizon:false,pin:""}};
+}
+let S;
+function load(){
+  try{ const raw = localStorage.getItem(KEY); S = raw ? JSON.parse(raw) : freshState(); }
+  catch(e){ S = freshState(); }
+  if(!S.settings) S.settings={hideHorizon:false,pin:""};
+  if(!S.learners || !S.learners.length){ S.learners=[{id:"l_demo",name:"Lernende/r 1"}]; S.currentLearner="l_demo"; }
+}
+let storageWarned=false;
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch(e){ if(!storageWarned){ storageWarned=true; toast("Speichern im Browser nicht möglich – bitte regelmäßig über „Daten“ exportieren."); } }
+}
+
+/* =========================================================
+   Helfer
+   ========================================================= */
+const $ = s=>document.querySelector(s);
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function uid(p){return p+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function topicById(id){return S.topics.find(t=>t.id===id);}
+function sortedTopics(){return [...S.topics].sort((a,b)=>a.name.localeCompare(b.name,"de"));}
+function prog(cardId){const l=S.progress[S.currentLearner]||(S.progress[S.currentLearner]={}); return l[cardId]||(l[cardId]={answers:[],status:"offen",self:"",feedback:"",updated:null});}
+function peekProg(cardId){const l=S.progress[S.currentLearner]; return l&&l[cardId];}
+function toast(msg){const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),2600);}
+function lines(v){return String(v||"").split("\n").map(s=>s.trim()).filter(Boolean);}
+
+/* =========================================================
+   Ansicht / Filter
+   ========================================================= */
+let F = {year:0, topic:"", q:"", status:""};
+
+function filtered(){
+  const q=F.q.trim().toLowerCase();
+  return S.cards.filter(c=>{
+    if(F.year && c.y!==F.year) return false;
+    if(F.topic && c.t!==F.topic) return false;
+    if(F.status){ const p=peekProg(c.id); const st=p?p.status:"offen"; if(st!==F.status) return false; }
+    if(q){ const hay=[c.title,c.pat,c.sit,c.setting,(c.src||[]).join(" "),(c.tasks||[]).join(" "),(topicById(c.t)||{}).name].join(" ").toLowerCase(); if(!hay.includes(q)) return false; }
+    return true;
+  }).sort((a,b)=>{
+    const ta=(topicById(a.t)||{name:""}).name, tb=(topicById(b.t)||{name:""}).name;
+    return (a.y-b.y) || ta.localeCompare(tb,"de") || a.title.localeCompare(b.title,"de");
+  });
+}
+
+function renderLearners(){
+  const sel=$("#learnerSel");
+  sel.innerHTML=S.learners.map(l=>`<option value="${esc(l.id)}"${l.id===S.currentLearner?" selected":""}>${esc(l.name)}</option>`).join("");
+}
+
+function renderTopics(){
+  const ul=$("#topicList"); let html=""; let lastLetter="";
+  const countFor=id=>S.cards.filter(c=>c.t===id && (!F.year||c.y===F.year)).length;
+  const total=S.cards.filter(c=>!F.year||c.y===F.year).length;
+  html+=`<li><button data-topic="" class="${F.topic===""?"on":""}"><span>Alle Themengebiete</span><span class="cnt">${total}</span></button></li>`;
+  sortedTopics().forEach(t=>{
+    const L=t.name.charAt(0).toUpperCase();
+    if(L!==lastLetter){ html+=`<li class="letter">${esc(L)}</li>`; lastLetter=L; }
+    const n=countFor(t.id);
+    html+=`<li><button data-topic="${esc(t.id)}" class="${F.topic===t.id?"on":""}" style="${n?"":"opacity:.55"}"><span>${esc(t.name)}</span><span class="cnt">${n}</span></button></li>`;
+  });
+  ul.innerHTML=html;
+}
+
+function statusBadge(cardId){
+  const p=peekProg(cardId); const st=p?p.status:"offen";
+  if(st==="erledigt") return `<span class="badge b-done">✓ Erledigt</span>`;
+  if(st==="bearbeitung") return `<span class="badge b-prog">In Bearbeitung</span>`;
+  return "";
+}
+
+function renderGrid(){
+  const list=filtered();
+  const tName=F.topic?(topicById(F.topic)||{}).name:"Alle Themengebiete";
+  $("#viewTitle").textContent=(F.year?YEAR_LABEL[F.year]+" · ":"")+tName;
+  // Fortschritt
+  const base=S.cards.filter(c=>(!F.year||c.y===F.year)&&(!F.topic||c.t===F.topic));
+  const done=base.filter(c=>{const p=peekProg(c.id);return p&&p.status==="erledigt";}).length;
+  const pct=base.length?Math.round(done/base.length*100):0;
+  const ln=(S.learners.find(l=>l.id===S.currentLearner)||{}).name||"";
+  $("#stat").innerHTML=`<span>${esc(ln)}: ${done}/${base.length} erledigt</span><div class="progressbar"><div style="width:${pct}%"></div></div>`;
+  if(!list.length){ $("#grid").innerHTML=`<div class="empty">Keine Lernkarten für diese Auswahl.<br><br><button class="btn primary" onclick="openEditor()">+ Neue Lernkarte anlegen</button></div>`; return; }
+  $("#grid").innerHTML=list.map(c=>{
+    const t=topicById(c.t)||{name:"(ohne Thema)",ce:""};
+    return `<article class="card" tabindex="0" data-id="${esc(c.id)}">
+      <div class="badges"><span class="badge b-y${c.y}">${YEAR_LABEL[c.y]}</span>${t.ce?`<span class="badge">${esc(t.ce)}</span>`:""}${c.builtIn?"":`<span class="badge b-own">Eigene Karte</span>`}${statusBadge(c.id)}</div>
+      <h3>${esc(c.title)}</h3>
+      <div class="meta">${esc(t.name)}</div>
+      <div class="meta">👤 ${esc(c.pat)}</div>
+      <div class="meta">${esc(c.setting||"")}${c.dur?" · ⏱ "+esc(c.dur):""}</div>
+    </article>`;
+  }).join("");
+}
+
+function renderAll(){ renderLearners(); renderTopics(); renderGrid(); }
+
+/* =========================================================
+   Detail / Lernmodus
+   ========================================================= */
+let currentCardId=null, horizonOpen=false;
+function openCard(id){
+  currentCardId=id; horizonOpen=false; renderDetail();
+  $("#detailOv").classList.add("open"); document.body.style.overflow="hidden";
+}
+function closeOv(id){ $(id).classList.remove("open"); if(!document.querySelector(".overlay.open")) document.body.style.overflow=""; }
+
+function renderDetail(){
+  const c=S.cards.find(x=>x.id===currentCardId); if(!c) return;
+  const t=topicById(c.t)||{name:"",ce:""}; const p=prog(c.id);
+  const ln=(S.learners.find(l=>l.id===S.currentLearner)||{}).name||"";
+  const tasks=(c.tasks||[]).map((q,i)=>`
+    <div class="task"><div class="q">${i+1}. ${esc(q)}</div>
+      <textarea data-ans="${i}" placeholder="Deine Antwort …">${esc(p.answers[i]||"")}</textarea>
+      <div class="print-answer">${esc(p.answers[i]||"")}</div>
+    </div>`).join("");
+  const horizon = (c.hor&&c.hor.length) ? (horizonOpen
+    ? `<div class="horizon"><ul class="clean">${c.hor.map(h=>`<li>${esc(h)}</li>`).join("")}</ul></div>`
+    : `<div class="hidden-box no-print">Erst selbst bearbeiten, dann vergleichen.<br><br><button class="btn" id="showHor">Erwartungshorizont anzeigen${S.settings.hideHorizon?" 🔒":""}</button></div>`) : `<div class="hidden-box">Kein Erwartungshorizont hinterlegt.</div>`;
+  const rating=["sicher","teilweise sicher","unsicher"].map(r=>`<button data-self="${r}" class="${p.self===r?"on":""}">${r}</button>`).join("");
+  $("#detailSheet").innerHTML=`
+  <div class="sheet-head">
+    <div>
+      <div class="badges"><span class="badge b-y${c.y}">${YEAR_LABEL[c.y]}</span><span class="badge">${esc(t.name)}</span>${t.ce?`<span class="badge">${esc(t.ce)}</span>`:""}${(c.kb||[]).map(k=>`<span class="badge" title="${esc(KB_LABEL[k]||"")}">KB ${esc(k)}</span>`).join("")}</div>
+      <h2>${esc(c.title)}</h2>
+      <div style="color:var(--muted);font-size:.88rem">${esc(c.setting||"")}${c.dur?" · ⏱ "+esc(c.dur):""} · Lernende/r: <b>${esc(ln)}</b></div>
+    </div>
+    <button class="btn x" data-close="#detailOv" aria-label="Schließen">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="sec"><h3>Fallbeispiel</h3><div class="case"><div class="pat">👤 ${esc(c.pat)}</div>${esc(c.sit)}</div></div>
+    ${(c.goals&&c.goals.length)?`<div class="sec"><h3>Lernziele</h3><ul class="clean">${c.goals.map(g=>`<li>${esc(g)}</li>`).join("")}</ul></div>`:""}
+    <div class="sec"><h3>Arbeitsaufträge</h3>${tasks||"<p>Keine Aufgaben hinterlegt.</p>"}</div>
+    <div class="sec"><h3>Erwartungshorizont</h3>${horizon}</div>
+    ${(c.refl&&c.refl.length)?`<div class="sec"><h3>Reflexion</h3><ul class="clean">${c.refl.map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>`:""}
+    <div class="sec"><h3>Selbsteinschätzung</h3><div class="rating">${rating}</div></div>
+    <div class="sec"><h3>Rückmeldung Praxisanleitung</h3><div class="fld"><textarea id="fb" placeholder="Beobachtungen, Stärken, nächste Lernschritte …">${esc(p.feedback||"")}</textarea><div class="print-answer">${esc(p.feedback||"")}</div></div></div>
+    <div class="sec"><h3>Quellen und Grundlagen</h3><ul class="clean src">${(c.src||[]).map(s=>`<li>${esc(s)}</li>`).join("")}</ul>
+      <p style="font-size:.8rem;color:var(--muted)">Fiktives, anonymisiertes Fallbeispiel. Einrichtungsinterne Standards und ärztliche Anordnungen haben Vorrang; Quellen vor dem Einsatz auf die jeweils aktuelle Fassung prüfen.</p></div>
+  </div>
+  <div class="sheet-foot">
+    <select id="statusSel" class="btn">${Object.entries(STATUS_LABEL).map(([k,v])=>`<option value="${k}"${p.status===k?" selected":""}>${v}</option>`).join("")}</select>
+    <button class="btn" id="printBtn">Drucken / PDF</button>
+    <button class="btn" id="dupBtn">Duplizieren</button>
+    <button class="btn" id="editBtn">Bearbeiten</button>
+    <button class="btn primary" data-close="#detailOv">Fertig</button>
+  </div>`;
+}
+
+function touch(p){ p.updated=new Date().toISOString(); if(p.status==="offen") p.status="bearbeitung"; }
+
+/* =========================================================
+   Editor
+   ========================================================= */
+let editingId=null;
+function openEditor(id, duplicate){
+  closeOv("#detailOv");
+  let c = id ? clone(S.cards.find(x=>x.id===id)) : {y:F.year||1,t:F.topic||"",title:"",setting:"",dur:"",kb:[],pat:"",sit:"",tasks:[],goals:[],hor:[],refl:[],src:[]};
+  if(duplicate){ c.title=c.title+" (Kopie)"; }
+  editingId = (id && !duplicate) ? id : null;
+  const topicOpts=sortedTopics().map(t=>`<option value="${esc(t.id)}"${c.t===t.id?" selected":""}>${esc(t.name)}</option>`).join("");
+  const kbChecks=Object.keys(KB_LABEL).map(k=>`<label style="display:flex;gap:.4rem;font-weight:400;font-size:.85rem;margin:.15rem 0"><input type="checkbox" value="${k}" class="kbChk" ${c.kb&&c.kb.includes(k)?"checked":""} style="width:auto"> ${esc(KB_LABEL[k])}</label>`).join("");
+  $("#editSheet").innerHTML=`
+  <div class="sheet-head"><div><h2>${editingId?"Lernkarte bearbeiten":"Neue Lernkarte"}</h2><div style="color:var(--muted);font-size:.88rem">Listenfelder: ein Eintrag pro Zeile.</div></div><button class="btn x" data-close="#editOv">✕</button></div>
+  <div class="sheet-body">
+    <div class="notice"><b>Datenschutz:</b> Nur anonymisierte oder fiktive Fälle verwenden – z. B. „Frau K., 78 Jahre“. Keine vollständigen Namen, Geburtsdaten, Adressen, Zimmernummern oder sonstigen Merkmale, die eine reale Person erkennbar machen.</div>
+    <div class="row" style="margin-top:1rem">
+      <div class="fld"><label>Lehrjahr</label><select id="e_y"><option value="1"${c.y==1?" selected":""}>1. Lehrjahr</option><option value="2"${c.y==2?" selected":""}>2. Lehrjahr</option><option value="3"${c.y==3?" selected":""}>3. Lehrjahr</option></select></div>
+      <div class="fld"><label>Themengebiet</label><select id="e_t"><option value="">– bitte wählen –</option>${topicOpts}</select></div>
+    </div>
+    <div class="fld"><label>Titel der Anleitungssituation *</label><input id="e_title" value="${esc(c.title)}"></div>
+    <div class="row">
+      <div class="fld"><label>Versorgungsbereich / Setting</label><input id="e_setting" value="${esc(c.setting)}" placeholder="z. B. Stationäre Langzeitpflege"></div>
+      <div class="fld"><label>Dauer</label><input id="e_dur" value="${esc(c.dur)}" placeholder="z. B. 45 Min."></div>
+    </div>
+    <div class="fld"><label>Anonymisierte Person(en) *</label><input id="e_pat" value="${esc(c.pat)}" placeholder="z. B. Herr M., 81 Jahre"></div>
+    <div class="fld"><label>Fallbeschreibung *</label><textarea id="e_sit" style="min-height:110px">${esc(c.sit)}</textarea></div>
+    <div class="fld"><label>Arbeitsaufträge (eine Aufgabe pro Zeile) *</label><textarea id="e_tasks" style="min-height:110px">${esc((c.tasks||[]).join("\n"))}</textarea></div>
+    <div class="fld"><label>Lernziele (eine pro Zeile)</label><textarea id="e_goals">${esc((c.goals||[]).join("\n"))}</textarea></div>
+    <div class="fld"><label>Erwartungshorizont (ein Punkt pro Zeile)</label><textarea id="e_hor" style="min-height:110px">${esc((c.hor||[]).join("\n"))}</textarea></div>
+    <div class="fld"><label>Reflexionsfragen (eine pro Zeile)</label><textarea id="e_refl">${esc((c.refl||[]).join("\n"))}</textarea></div>
+    <div class="fld"><label>Quellen / rechtliche und wissenschaftliche Grundlagen (eine pro Zeile)</label><textarea id="e_src">${esc((c.src||[]).join("\n"))}</textarea><div class="hint">Nur überprüfbare Quellen angeben (Gesetz mit Paragraf, Expertenstandard, Leitlinie mit Herausgeber).</div></div>
+    <div class="fld"><label>Kompetenzbereiche (Anlage 2 PflAPrV)</label>${kbChecks}</div>
+  </div>
+  <div class="sheet-foot">
+    ${editingId?`<button class="btn danger" id="delCard" style="margin-right:auto">Löschen</button>`:""}
+    <button class="btn" data-close="#editOv">Abbrechen</button>
+    <button class="btn primary" id="saveCard">Speichern</button>
+  </div>`;
+  $("#editOv").classList.add("open"); document.body.style.overflow="hidden";
+}
+
+function anonymityIssues(text){
+  const issues=[];
+  if(/\b\d{1,2}\.\s?\d{1,2}\.\s?(19|20)?\d{2}\b/.test(text)) issues.push("Datum (mögliches Geburts- oder Aufnahmedatum)");
+  if(/\b(geb\.|geboren am)\b/i.test(text)) issues.push("Hinweis auf Geburtsdatum");
+  if(/\b(Herr|Frau)\s+[A-ZÄÖÜ][a-zäöüß]{2,}/.test(text)) issues.push("ausgeschriebener Nachname");
+  if(/\b(Zimmer|Zi\.)\s*\d+/i.test(text)) issues.push("Zimmernummer");
+  if(/\b\d{5}\b/.test(text)) issues.push("fünfstellige Zahl (mögliche Postleitzahl oder Fallnummer)");
+  if(/str(\.|aße)\s*\d+/i.test(text)) issues.push("Adresse");
+  return issues;
+}
+
+function saveCard(){
+  const v=id=>$(id).value;
+  const c={
+    y:parseInt(v("#e_y"),10), t:v("#e_t"), title:v("#e_title").trim(), setting:v("#e_setting").trim(), dur:v("#e_dur").trim(),
+    pat:v("#e_pat").trim(), sit:v("#e_sit").trim(), tasks:lines(v("#e_tasks")), goals:lines(v("#e_goals")), hor:lines(v("#e_hor")),
+    refl:lines(v("#e_refl")), src:lines(v("#e_src")), kb:[...document.querySelectorAll(".kbChk:checked")].map(x=>x.value)
+  };
+  if(!c.title||!c.pat||!c.sit||!c.tasks.length||!c.t){ toast("Bitte Titel, Themengebiet, Person, Fall und mindestens eine Aufgabe ausfüllen."); return; }
+  const iss=anonymityIssues([c.pat,c.sit,c.title].join(" "));
+  if(iss.length && !confirm("Möglicherweise nicht anonymisiert:\n– "+iss.join("\n– ")+"\n\nTrotzdem speichern?")) return;
+  if(editingId){ const i=S.cards.findIndex(x=>x.id===editingId); S.cards[i]={...S.cards[i],...c}; }
+  else { c.id=uid("u"); c.builtIn=false; S.cards.push(c); editingId=c.id; }
+  save(); closeOv("#editOv"); renderAll(); toast("Lernkarte gespeichert."); openCard(editingId);
+}
+
+/* =========================================================
+   Dialoge: Themen, Daten, Grundlagen, Lernende
+   ========================================================= */
+function openDlg(html){ $("#dlgSheet").innerHTML=html; $("#dlgOv").classList.add("open"); document.body.style.overflow="hidden"; }
+
+function topicsDlg(){
+  const rows=sortedTopics().map(t=>{const n=S.cards.filter(c=>c.t===t.id).length;
+    return `<tr><td><input data-tname="${esc(t.id)}" value="${esc(t.name)}" style="width:100%;padding:.3rem;border:1px solid var(--line);border-radius:6px;background:var(--panel2)"></td><td><input data-tce="${esc(t.id)}" value="${esc(t.ce||"")}" style="width:110px;padding:.3rem;border:1px solid var(--line);border-radius:6px;background:var(--panel2)"></td><td>${n}</td><td>${n?"":`<button class="btn small danger" data-tdel="${esc(t.id)}">Löschen</button>`}</td></tr>`;}).join("");
+  openDlg(`<div class="sheet-head"><div><h2>Themengebiete verwalten</h2><div style="color:var(--muted);font-size:.88rem">Alphabetische Sortierung erfolgt automatisch. Themen mit Karten können nicht gelöscht werden.</div></div><button class="btn x" data-close="#dlgOv">✕</button></div>
+  <div class="sheet-body"><table class="info"><thead><tr><th>Name</th><th>CE</th><th>Karten</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+  <div class="row" style="margin-top:1rem;align-items:flex-end"><div class="fld"><label>Neues Themengebiet</label><input id="newTopic" placeholder="z. B. Schlaf und Ruhe"></div><div class="fld" style="flex:0 1 130px"><label>CE</label><input id="newTopicCe" placeholder="z. B. CE 02"></div><div class="fld" style="flex:0 0 auto"><button class="btn primary" id="addTopic">Hinzufügen</button></div></div></div>
+  <div class="sheet-foot"><button class="btn primary" id="saveTopics">Speichern</button></div>`);
+}
+
+function dataDlg(){
+  openDlg(`<div class="sheet-head"><div><h2>Daten sichern und übertragen</h2><div style="color:var(--muted);font-size:.88rem">Alle Daten liegen nur in diesem Browser auf diesem Gerät.</div></div><button class="btn x" data-close="#dlgOv">✕</button></div>
+  <div class="sheet-body">
+    <div class="sec"><h3>Export</h3><p>Sichert Karten, Themen, Lernende und Bearbeitungsstände als JSON-Datei – zum Backup oder zur Weitergabe an andere Geräte.</p>
+      <div class="row"><button class="btn primary" id="expAll">Alles exportieren</button><button class="btn" id="expCards">Nur Karten und Themen exportieren</button></div></div>
+    <div class="sec"><h3>Import</h3><p>Importierte Karten werden ergänzt; bei gleicher ID wird die Karte überschrieben. Bearbeitungsstände werden zusammengeführt.</p>
+      <button class="btn" id="impBtn">JSON-Datei importieren …</button></div>
+    <div class="sec"><h3>Lernende</h3><p>Aktuelle/r Lernende/r: <b>${esc((S.learners.find(l=>l.id===S.currentLearner)||{}).name||"")}</b></p>
+      <div class="row"><button class="btn" id="renLearner">Umbenennen</button><button class="btn danger" id="delLearner">Lernende/n entfernen</button><button class="btn" id="resetProg">Bearbeitungsstände dieser Person zurücksetzen</button></div></div>
+    <div class="sec"><h3>Einstellungen</h3>
+      <label style="display:flex;gap:.5rem;align-items:center"><input type="checkbox" id="hideHor" ${S.settings.hideHorizon?"checked":""}> Erwartungshorizont für Lernende sperren (PIN der Praxisanleitung)</label>
+      <div class="fld" style="max-width:240px;margin-top:.5rem"><label>PIN</label><input id="pinInp" type="password" value="${esc(S.settings.pin||"")}" placeholder="z. B. 4 Ziffern"><div class="hint">Einfacher Sichtschutz, kein Datenschutz-Verfahren.</div></div>
+      <button class="btn" id="saveSettings">Einstellungen speichern</button></div>
+    <div class="sec"><h3>Zurücksetzen</h3><button class="btn" id="restoreDefaults">Mitgelieferte Beispielkarten wiederherstellen</button> <button class="btn danger" id="wipeAll">Alle Daten löschen</button></div>
+  </div>`);
+}
+
+function infoDlg(){
+  const ce=[["CE 01","Ausbildungsstart – Pflegefachfrau/Pflegefachmann werden"],["CE 02","Zu pflegende Menschen in der Bewegung und Selbstversorgung unterstützen"],["CE 03","Erste Pflegeerfahrungen reflektieren – verständigungsorientiert kommunizieren"],["CE 04","Gesundheit fördern und präventiv handeln"],["CE 05","Menschen in kurativen Prozessen pflegerisch unterstützen und Patientensicherheit stärken"],["CE 06","In Akutsituationen sicher handeln"],["CE 07","Rehabilitatives Pflegehandeln im interprofessionellen Team"],["CE 08","Menschen in kritischen Lebenssituationen und in der letzten Lebensphase begleiten"],["CE 09","Menschen bei der Lebensgestaltung lebensweltorientiert unterstützen"],["CE 10","Entwicklung und Gesundheit in Kindheit und Jugend in pflegerischen Situationen fördern"],["CE 11","Menschen mit psychischen Gesundheitsproblemen und kognitiven Beeinträchtigungen personenzentriert unterstützen"]];
+  openDlg(`<div class="sheet-head"><div><h2>Grundlagen der Lernkarten</h2></div><button class="btn x" data-close="#dlgOv">✕</button></div>
+  <div class="sheet-body">
+    <div class="sec"><h3>Rechtlicher Rahmen</h3><ul class="clean">
+      <li><b>Pflegeberufegesetz (PflBG)</b> – § 5 Ausbildungsziel; § 4 Vorbehaltene Aufgaben, Pflegeprozessverantwortung (seit 01.01.2026 in der Fassung des Gesetzes zur Befugniserweiterung und Entbürokratisierung in der Pflege).</li>
+      <li><b>Pflegeberufe-Ausbildungs- und -Prüfungsverordnung (PflAPrV)</b> – Praxisanleitung im Umfang von mindestens 10 % der praktischen Ausbildungszeit; Kompetenzen nach Anlage 1 (Zwischenprüfung) und Anlage 2 (Abschluss Pflegefachfrau/Pflegefachmann).</li>
+      <li><b>${esc(RP)}</b> – Rahmenlehrplan mit elf curricularen Einheiten und Rahmenausbildungsplan; empfehlende Wirkung.</li></ul></div>
+    <div class="sec"><h3>Curriculare Einheiten</h3><table class="info">${ce.map(r=>`<tr><td style="white-space:nowrap"><b>${r[0]}</b></td><td>${esc(r[1])}</td></tr>`).join("")}</table></div>
+    <div class="sec"><h3>Kompetenzbereiche (Anlage 2 PflAPrV)</h3><ul class="clean">${Object.values(KB_LABEL).map(v=>`<li>${esc(v)}</li>`).join("")}</ul></div>
+    <div class="sec"><h3>Zuordnung zu Lehrjahren</h3><p>Die Rahmenpläne gliedern nach Ausbildungsdritteln (1./2. Drittel und 3. Drittel). Die Zuordnung der Karten zu Lehrjahren ist ein Vorschlag nach steigender Komplexität und kann im Editor an das schulinterne Curriculum und den Ausbildungsplan angepasst werden.</p></div>
+    <div class="sec"><h3>Hinweise</h3><ul class="clean">
+      <li>Alle Fallbeispiele sind fiktiv und anonymisiert (Initial, Alter). Ähnlichkeiten mit realen Personen sind zufällig.</li>
+      <li>Die Inhalte ersetzen keine einrichtungsinternen Standards, Hygienepläne oder ärztlichen Anordnungen.</li>
+      <li>Expertenstandards und Leitlinien werden regelmäßig aktualisiert – bitte vor dem Einsatz die gültige Fassung prüfen (DNQP, AWMF, RKI/KRINKO, GRC).</li></ul></div>
+  </div>`);
+}
+
+/* =========================================================
+   Export / Import
+   ========================================================= */
+function download(obj,name){
+  const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);
+}
+function dateStr(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function doImport(data){
+  if(!data||!Array.isArray(data.cards)){ toast("Ungültige Datei."); return; }
+  (data.topics||[]).forEach(t=>{ if(t&&t.id&&!topicById(t.id)) S.topics.push({id:t.id,name:t.name,ce:t.ce||""}); });
+  let n=0; data.cards.forEach(c=>{ if(!c||!c.id) return; const i=S.cards.findIndex(x=>x.id===c.id); if(i>=0) S.cards[i]=c; else S.cards.push(c); n++; });
+  (data.learners||[]).forEach(l=>{ if(l&&l.id&&!S.learners.find(x=>x.id===l.id)) S.learners.push(l); });
+  if(data.progress) Object.entries(data.progress).forEach(([lid,cards])=>{ S.progress[lid]=Object.assign(S.progress[lid]||{},cards); });
+  save(); renderAll(); closeOv("#dlgOv"); toast(n+" Karten importiert.");
+}
+
+/* =========================================================
+   Events
+   ========================================================= */
+document.addEventListener("click",e=>{
+  const el=e.target.closest("button, .card, [data-close]"); if(!el) return;
+  if(el.dataset.close){ closeOv(el.dataset.close); if(el.dataset.close==="#detailOv") renderGrid(); return; }
+  if(el.classList.contains("card")){ openCard(el.dataset.id); return; }
+  if(el.dataset.y!==undefined && el.closest("#yearSeg")){ F.year=parseInt(el.dataset.y,10); document.querySelectorAll("#yearSeg button").forEach(b=>b.classList.toggle("on",b===el)); renderTopics(); renderGrid(); return; }
+  if(el.dataset.topic!==undefined){ F.topic=el.dataset.topic; renderTopics(); renderGrid(); $("#aside").classList.remove("open"); return; }
+  if(el.dataset.self){ const p=prog(currentCardId); p.self=el.dataset.self; touch(p); save(); renderDetail(); return; }
+  if(el.dataset.tdel){ S.topics=S.topics.filter(t=>t.id!==el.dataset.tdel); if(F.topic===el.dataset.tdel) F.topic=""; save(); topicsDlg(); renderAll(); return; }
+  switch(el.id){
+    case "menuBtn": $("#aside").classList.toggle("open"); break;
+    case "newCardBtn": openEditor(); break;
+    case "topicsBtn": topicsDlg(); break;
+    case "dataBtn": dataDlg(); break;
+    case "infoBtn": infoDlg(); break;
+    case "learnerAdd": { const n=prompt("Name oder Kürzel der/des Lernenden:"); if(n&&n.trim()){ const l={id:uid("l"),name:n.trim()}; S.learners.push(l); S.currentLearner=l.id; save(); renderAll(); } break; }
+    case "showHor": {
+      if(S.settings.hideHorizon && S.settings.pin){ const pin=prompt("PIN der Praxisanleitung:"); if(pin!==S.settings.pin){ toast("PIN nicht korrekt."); break; } }
+      horizonOpen=true; renderDetail(); break; }
+    case "printBtn": $("#detailOv").classList.add("print-target"); window.print(); setTimeout(()=>$("#detailOv").classList.remove("print-target"),500); break;
+    case "dupBtn": openEditor(currentCardId,true); break;
+    case "editBtn": openEditor(currentCardId); break;
+    case "saveCard": saveCard(); break;
+    case "delCard": if(confirm("Diese Lernkarte endgültig löschen?")){ S.cards=S.cards.filter(c=>c.id!==editingId); Object.values(S.progress).forEach(p=>delete p[editingId]); save(); closeOv("#editOv"); renderAll(); toast("Gelöscht."); } break;
+    case "addTopic": { const n=$("#newTopic").value.trim(); if(!n) break; if(S.topics.some(t=>t.name.toLowerCase()===n.toLowerCase())){ toast("Thema existiert bereits."); break; } S.topics.push({id:uid("t"),name:n,ce:$("#newTopicCe").value.trim()}); save(); topicsDlg(); renderAll(); break; }
+    case "saveTopics": document.querySelectorAll("[data-tname]").forEach(i=>{ const t=topicById(i.dataset.tname); if(t&&i.value.trim()) t.name=i.value.trim(); }); document.querySelectorAll("[data-tce]").forEach(i=>{ const t=topicById(i.dataset.tce); if(t) t.ce=i.value.trim(); }); save(); closeOv("#dlgOv"); renderAll(); toast("Themen gespeichert."); break;
+    case "expAll": download(S,"pflege-lernkarten-backup-"+dateStr()+".json"); break;
+    case "expCards": download({version:1,topics:S.topics,cards:S.cards},"pflege-lernkarten-karten-"+dateStr()+".json"); break;
+    case "impBtn": $("#importFile").click(); break;
+    case "renLearner": { const l=S.learners.find(x=>x.id===S.currentLearner); const n=prompt("Neuer Name:",l.name); if(n&&n.trim()){ l.name=n.trim(); save(); renderAll(); dataDlg(); } break; }
+    case "delLearner": { if(S.learners.length<2){ toast("Mindestens eine Person muss bestehen bleiben."); break; } if(confirm("Diese Person und ihre Bearbeitungsstände entfernen?")){ delete S.progress[S.currentLearner]; S.learners=S.learners.filter(l=>l.id!==S.currentLearner); S.currentLearner=S.learners[0].id; save(); renderAll(); dataDlg(); } break; }
+    case "resetProg": if(confirm("Alle Antworten und Status dieser Person zurücksetzen?")){ S.progress[S.currentLearner]={}; save(); renderAll(); toast("Zurückgesetzt."); } break;
+    case "saveSettings": S.settings.hideHorizon=$("#hideHor").checked; S.settings.pin=$("#pinInp").value; save(); toast("Einstellungen gespeichert."); break;
+    case "restoreDefaults": {
+      DEFAULT_TOPICS.forEach(t=>{ if(!topicById(t.id)) S.topics.push(clone(t)); });
+      DEFAULT_CARDS.forEach(c=>{ const i=S.cards.findIndex(x=>x.id===c.id); const nc={...clone(c),builtIn:true}; if(i>=0) S.cards[i]=nc; else S.cards.push(nc); });
+      save(); renderAll(); toast("Beispielkarten wiederhergestellt."); break; }
+    case "wipeAll": if(confirm("Wirklich ALLE Daten (Karten, Lernende, Antworten) löschen? Vorher exportieren!")){ S=freshState(); save(); F={year:0,topic:"",q:"",status:""}; closeOv("#dlgOv"); renderAll(); document.querySelectorAll("#yearSeg button").forEach((b,i)=>b.classList.toggle("on",i===0)); } break;
+  }
+});
+document.addEventListener("input",e=>{
+  const t=e.target;
+  if(t.id==="search"){ F.q=t.value; renderGrid(); return; }
+  if(t.dataset && t.dataset.ans!==undefined){ const p=prog(currentCardId); p.answers[+t.dataset.ans]=t.value; touch(p); save(); return; }
+  if(t.id==="fb"){ const p=prog(currentCardId); p.feedback=t.value; p.updated=new Date().toISOString(); save(); return; }
+});
+document.addEventListener("change",e=>{
+  const t=e.target;
+  if(t.id==="learnerSel"){ S.currentLearner=t.value; save(); renderAll(); return; }
+  if(t.id==="statusFilter"){ F.status=t.value; renderGrid(); return; }
+  if(t.id==="statusSel"){ const p=prog(currentCardId); p.status=t.value; p.updated=new Date().toISOString(); save(); toast("Status: "+STATUS_LABEL[t.value]); return; }
+  if(t.id==="importFile"){ const f=t.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ try{ doImport(JSON.parse(r.result)); }catch(err){ toast("Datei konnte nicht gelesen werden."); } t.value=""; }; r.readAsText(f); }
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ const open=[...document.querySelectorAll(".overlay.open")].pop(); if(open){ closeOv("#"+open.id); if(open.id==="detailOv") renderGrid(); } }
+  if(e.key==="Enter" && e.target.classList && e.target.classList.contains("card")) openCard(e.target.dataset.id);
+});
+document.querySelectorAll(".overlay").forEach(ov=>ov.addEventListener("click",e=>{ if(e.target===ov){ closeOv("#"+ov.id); if(ov.id==="detailOv") renderGrid(); } }));
+
+load(); renderAll();
+</script>
+</body>
+</html>
